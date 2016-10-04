@@ -22,8 +22,8 @@
   <a href="https://sqlast.herokuapp.com/"> 
     <img src="https://sqlast.herokuapp.com/badge.svg" alt=" "> 
   </a>
-  <a href="https://travis-ci.org/jdrew1303/sqltraverse"> 
-    <img src="https://img.shields.io/travis/jdrew1303/sqltraverse.svg?style=flat-square" alt=" "> 
+  <a href="https://travis-ci.org/jdrew1303/sqlgenerate"> 
+    <img src="https://img.shields.io/travis/jdrew1303/sqlgenerate.svg?style=flat-square" alt=" "> 
   </a>
   <a href="./LICENSE"> 
     <img src="http://img.shields.io/badge/license-BSD%202%20Clause-blue.svg?style=flat-square" alt=" "> 
