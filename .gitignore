@@ -1,0 +1,22 @@
+# Emacs
+*~
+\#*\#
+
+# Node modules
+node_modules/
+
+test/conditional.spec.js
+test/expressions.spec.js
+test/functions.spec.js
+test/replace.spec.js
+test/select.spec.js
+
+# Cover
+.coverage_data/
+cover_html/
+coverage/
+
+npm-debug.log
+.vimrc.local
+
+.c9/
