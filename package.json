@@ -33,7 +33,7 @@
   "license": "BSD-2-Clause",
   "scripts": {
     "test": "npm run-script lint && npm run-script unit-test",
-    "lint": "jshint sqltraverse.js",
+    "lint": "jshint sqlgenerate.js",
     "unit-test": "mocha --compilers js:babel-register",
     "dev-ci" : "mocha --compilers js:babel-register --watch"
   }
