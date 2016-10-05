@@ -8,5 +8,6 @@ describe('basic tests', () => {
     
     it('contains the generate api', () => {
         expect(sqlgenerate.generate).to.be.a('function');
-    })
+    });
+    
 });
