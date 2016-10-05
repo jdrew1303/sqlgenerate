@@ -1,0 +1,16 @@
+{
+  "type": "statement",
+  "variant": "list",
+  "statement": [
+    {
+      "type": "statement",
+      "variant": "transaction",
+      "action": "rollback",
+      "savepoint": {
+        "type": "identifier",
+        "variant": "savepoint",
+        "name": "super_save"
+      }
+    }
+  ]
+}

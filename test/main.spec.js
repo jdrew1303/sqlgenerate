@@ -10,4 +10,14 @@ describe('basic tests', () => {
         expect(sqlgenerate.generate).to.be.a('function');
     });
     
+    it('returns a string', () => {
+        const ast = {
+            "type": "statement",
+            "variant": "select",
+            "result": []
+        }
+        expect(sqlgenerate.generate(ast)).to.be.a('string');
+    });
+    
+    
 });
