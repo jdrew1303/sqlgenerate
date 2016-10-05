@@ -1,7 +1,8 @@
 import { expect } from 'chai';
+import sqlgenerate from '..';
 
-describe('dummy test', () => {
-    it('should be able to run', () => {
-        expect(true).to.be.equal(true);
+describe('basic tests', () => {
+    it('should be able to display the version', () => {
+        expect(sqlgenerate.version).to.be.equal(require('../package.json').version);
     })
-})
+});
