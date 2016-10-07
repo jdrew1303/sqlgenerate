@@ -11,6 +11,6 @@
   "unused": true,
   "strict": true,
   "trailing": true,
-
+  "esversion": 6,
   "node": true
 }
