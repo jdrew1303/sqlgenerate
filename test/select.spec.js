@@ -7,16 +7,18 @@ import basicSelect from '../test/json/select/basic-select.json';
 
 describe('Select', () => {
     it('generates a basic select statement', (done) => {
-        readFile('test/sql/select/basic-select.sql', (err, data) => {
-            if (err) throw "Unable to read file";
-            var sql = data.toString();
-            expectResultAndFileToBeEqual(sql);
-            done();
-        })
-        
+        generateTestForFile('test/sql/select/basic-select.sql', done);
     });
-    
 });
+
+function generateTestForFile(filepath, done){
+    readFile(filepath, (err, data) => {
+        if (err) throw "Unable to read file";
+        var sql = data.toString();
+        expectResultAndFileToBeEqual(sql);
+        done();
+    });
+}
 
 function expectResultAndFileToBeEqual(sql){
   
