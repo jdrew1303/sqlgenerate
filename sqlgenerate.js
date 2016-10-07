@@ -1,26 +1,18 @@
 var sqltraverse = require('sqltraverse');
+var generateExpression = require('./src/expressions')
+var _ = require('lodash');
 
-var templates = {
+function generateSelect (selectNode) {
     
+    var result = selectNode.result.map((result) => {return result.name}).join(', ');
+    var from = selectNode.from.map((from) => {return from.name}).join(', ');
+    var where = generateExpression(_.first(selectNode.where));
+    
+    return `SELECT ${result} FROM ${from} WHERE ${where}`
 }
-var generate = function (ast) {
-    var result = [];
-    
-    sqltraverse.traverse(ast, {
-        enter : function (node, parent) {
-            // var nodeText = templates[node.type + '_enter'](node, parent);
-            // if (nodeText) result.push(nodeText);
-        },
 
-        leave : function (node, parent){
-            // var nodeText = templates[node.type + '_leave'](node, parent);
-            // if (nodeText) result.push(nodeText);
-        },
-        
-        fallback : 'iteration'
-    });
-    
-    return result.join('');
+var generate = function (ast) {
+    return ast.statement.map(generateSelect).join('\n');
 }
 
 module.exports = {
@@ -28,3 +20,4 @@ module.exports = {
     generate        : generate,
     attachComments  : sqltraverse.attachComments
 };
+
