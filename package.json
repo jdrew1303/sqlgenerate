@@ -22,6 +22,7 @@
     "babel-preset-es2015": "^6.3.13",
     "babel-register": "^6.3.13",
     "chai": "^2.1.1",
+    "glob": "^7.1.0",
     "gulp": "^3.8.10",
     "gulp-bump": "^0.2.2",
     "gulp-filter": "^2.0.0",
