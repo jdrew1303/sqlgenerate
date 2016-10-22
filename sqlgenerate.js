@@ -34,22 +34,32 @@ const defaultGenerator = {
                 var group = defaultGenerator[node.group.type][node.group.variant](node.group, state);
                 str.push(`${state.indent}GROUP BY ${group}${state.lineEnd}`);
             }
+            if (node.having) {
+                var having = defaultGenerator[node.having.type][node.having.variant](node.having, state);
+                str.push(`${state.indent}HAVING ${having}${state.lineEnd}`);
+            }
             return str.join('');
         }
     },
     identifier : {
         star : () => '*',
-        table : (node) => (node.alias)  ? `${node.name} ${node.alias}` 
+        table : (node) => (node.alias)  ? `\`${node.name}\` ${node.alias}` 
                                         : `${node.name}`,
         column : (node) => node.name,
+        'function' : (node) => node.name,
     },
     literal : {
         text : (node) => `'${node.value}'`,
+        decimal : (node) => `${node.value}`
     },
     expression : {
         operation : (node, state) => {
-            const left = defaultGenerator[node.left.type][node.left.variant](node.left, state);
-            const right = defaultGenerator[node.right.type][node.right.variant](node.right, state);
+            function side (node, state) {
+                return (node.type === 'function') ? defaultGenerator['function'](node, state) 
+                                                  : defaultGenerator[node.type][node.variant](node, state);
+            }
+            const left = side(node.left, state);
+            const right = side(node.right, state);
             return `(${left} ${node.operation} ${right})`;
         },
         list : (node, state) => {
@@ -57,6 +67,12 @@ const defaultGenerator = {
             const argsList = compose(join(', '), mapList);
             return argsList(node.expression);
         }
+    },
+    'function' : (node, state) => {
+        const name = defaultGenerator[node.name.type][node.name.variant](node.name, state);
+        const args = defaultGenerator[node.args.type][node.args.variant](node.args, state);
+        
+        return `${name.toLocaleUpperCase()}(${args})`;
     }
 };
 
