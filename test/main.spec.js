@@ -7,7 +7,7 @@ import * as _       from 'lodash';
 
 describe('test suite', () => {
     // get all sql files in our test suite
-    let files = glob.sync('**/*.sql');
+    let files = glob.sync('test/sql/**/*.sql');
     
     // extract information from the filepath names
     let tests = _.groupBy(_.map(files, (file) => {
@@ -36,7 +36,7 @@ describe('test suite', () => {
                         var ast = parser(sql);
                         
                         var regeneratedSQL = generate(ast);
-                        
+                        console.log(regeneratedSQL);
                         var isParsible = parser(regeneratedSQL)
                         
                         expect(isParsible).to.deep.equal(ast);
