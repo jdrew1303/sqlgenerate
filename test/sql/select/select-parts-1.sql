@@ -3,7 +3,7 @@ SELECT
 FROM
   `hats` h
 WHERE
-  h.color == 'red'
+  (h.color == 'red')
 GROUP BY
   h.color, h.material
 HAVING

@@ -35,7 +35,7 @@ const defaultGenerator = {
     },
     identifier : {
         star : () => '*',
-        table : (node) => node.name,
+        table : (node) => (node.alias) ? `${node.name} ${node.alias}` : `${node.name}`,
         column : (node) => node.name,
     },
     literal : {
