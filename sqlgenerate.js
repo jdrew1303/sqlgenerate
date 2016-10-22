@@ -30,12 +30,17 @@ const defaultGenerator = {
                 var where = defaultGenerator[whereNode.type][whereNode.variant](whereNode, state);
                 str.push(`${state.indent}WHERE ${where}${state.lineEnd}`);
             }
+            if (node.group) {
+                var group = defaultGenerator[node.group.type][node.group.variant](node.group, state);
+                str.push(`${state.indent}GROUP BY ${group}${state.lineEnd}`);
+            }
             return str.join('');
         }
     },
     identifier : {
         star : () => '*',
-        table : (node) => (node.alias) ? `${node.name} ${node.alias}` : `${node.name}`,
+        table : (node) => (node.alias)  ? `${node.name} ${node.alias}` 
+                                        : `${node.name}`,
         column : (node) => node.name,
     },
     literal : {
@@ -46,6 +51,11 @@ const defaultGenerator = {
             const left = defaultGenerator[node.left.type][node.left.variant](node.left, state);
             const right = defaultGenerator[node.right.type][node.right.variant](node.right, state);
             return `(${left} ${node.operation} ${right})`;
+        },
+        list : (node, state) => {
+            const mapList = map((n) => defaultGenerator[n.type][n.variant](n, state));
+            const argsList = compose(join(', '), mapList);
+            return argsList(node.expression);
         }
     }
 };
