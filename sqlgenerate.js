@@ -18,25 +18,34 @@ const defaultGenerator = {
             const argsList = compose(join(', '), mapList);
             var str = ['SELECT '];
             if (node.result) {
-                var results = argsList(node.result);
+                const results = argsList(node.result);
                 str.push(`${results}${state.lineEnd}`);
             }
             if (node.from) {
-                var from = defaultGenerator[node.from.type][node.from.variant](node.from, state);
+                const from = defaultGenerator[node.from.type][node.from.variant](node.from, state);
                 str.push(`${state.indent}FROM ${from}${state.lineEnd}`);
             }
             if (node.where) {
-                var whereNode = head(node.where);
-                var where = defaultGenerator[whereNode.type][whereNode.variant](whereNode, state);
+                const whereNode = head(node.where);
+                const where = defaultGenerator[whereNode.type][whereNode.variant](whereNode, state);
                 str.push(`${state.indent}WHERE ${where}${state.lineEnd}`);
             }
             if (node.group) {
-                var group = defaultGenerator[node.group.type][node.group.variant](node.group, state);
+                const group = defaultGenerator[node.group.type][node.group.variant](node.group, state);
                 str.push(`${state.indent}GROUP BY ${group}${state.lineEnd}`);
             }
             if (node.having) {
-                var having = defaultGenerator[node.having.type][node.having.variant](node.having, state);
+                const having = defaultGenerator[node.having.type][node.having.variant](node.having, state);
                 str.push(`${state.indent}HAVING ${having}${state.lineEnd}`);
+            }
+            if (node.order) {
+                const orderNode = head(node.order);
+                const order = defaultGenerator[orderNode.type][orderNode.variant](orderNode, state);
+                str.push(`${state.indent}ORDER BY ${order}${state.lineEnd}`);
+            }
+            if (node.limit) {
+                const limit = defaultGenerator[node.limit.type][node.limit.variant](node.limit, state);
+                str.push(`${state.indent}${limit}`);
             }
             return str.join('');
         }
@@ -66,6 +75,16 @@ const defaultGenerator = {
             const mapList = map((n) => defaultGenerator[n.type][n.variant](n, state));
             const argsList = compose(join(', '), mapList);
             return argsList(node.expression);
+        },
+        order : (node, state) => {
+            const expression = defaultGenerator[node.expression.type][node.expression.variant](node.expression, state);
+            const direction = node.direction;
+            return `${expression} ${direction.toLocaleUpperCase()}`;
+        },
+        limit : (node, state) => {
+            const limit = defaultGenerator[node.start.type][node.start.variant](node.start, state);
+            const offset = defaultGenerator[node.offset.type][node.offset.variant](node.offset, state);
+            return `LIMIT ${limit}${state.lineEnd}${state.indent}OFFSET ${offset}`;
         }
     },
     'function' : (node, state) => {

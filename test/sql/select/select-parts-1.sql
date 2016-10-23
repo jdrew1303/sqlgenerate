@@ -7,7 +7,7 @@ WHERE
 GROUP BY
   h.color, h.material
 HAVING
-  COUNT(h.quantity) >= 200
+  (COUNT(h.quantity) >= 200)
 ORDER BY
   h.color DESC
 LIMIT
