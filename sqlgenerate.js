@@ -53,6 +53,19 @@ const defaultGenerator = {
                 str.push(`${state.indent}${limit}`);
             }
             return str.join('');
+        },
+        compound : (node, state) => {
+            const firstStatement = defaultGenerator[node.statement.type][node.statement.variant](node.statement, state);
+            
+            const compoundMap = map((n) => defaultGenerator[n.type][n.variant](n, state));
+            const compound = compoundMap(node.compound);
+            return `${firstStatement}${compound}`;
+        }
+    },
+    compound : {
+        union : (node, state) => {
+            const statement = defaultGenerator[node.statement.type][node.statement.variant](node.statement, state);
+            return `UNION${state.lineEnd}${statement}`;
         }
     },
     identifier : {
