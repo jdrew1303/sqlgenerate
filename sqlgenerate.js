@@ -1,5 +1,10 @@
 'use strict';
+
+// Needed to allow its use in older versions of Node and Browsers.
 require('babel-polyfill');
+
+// Trying to use as much functional methods as possible to clean up codebase. 
+// Currently failing miserably. :(
 var R = require('ramda');
 var map = R.map;
 var join = R.join;
@@ -95,6 +100,30 @@ const defaultGenerator = {
         const args = defaultGenerator[node.args.type][node.args.variant](node.args, state);
         
         return `${name.toLocaleUpperCase()}(${args})`;
+    },
+    map : {
+        join : (node, state) => {
+            const source = defaultGenerator[node.source.type][node.source.variant](node.source, state);
+            const sourceAlias = (node.source.alias)? node.source.alias : '';
+            const joinNode = head(node.map);
+            const join = defaultGenerator[joinNode.type][joinNode.variant](joinNode, state);
+            return `(${source}) AS ${sourceAlias}${state.lineEnd}${join}`;
+        }
+    },
+    
+    join : {
+        join : (node, state) => {
+            const source = defaultGenerator[node.source.type][node.source.variant](node.source, state);
+            const constraint = defaultGenerator[node.constraint.type][node.constraint.variant](node.constraint, state);
+            
+            return `${state.indent}JOIN ${source}${state.lineEnd}${constraint}`;
+        }
+    },
+    constraint : {
+        join : (node, state) => {
+            const on = defaultGenerator[node.on.type][node.on.variant](node.on, state);
+            return `${state.indent}ON ${on}${state.lineEnd}`;
+        }
     }
 };
 
