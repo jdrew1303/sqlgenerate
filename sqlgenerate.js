@@ -75,15 +75,23 @@ const defaultGenerator = {
         star : () => '*',
         table : (node) => {
             
-            const tableNames =  (node.alias)  ? `AS ${node.alias}` 
+            const alias =  (node.alias)  ? `AS ${node.alias}` 
                                               : ``;
             const index = (node.index) ? defaultGenerator[node.index.type][node.index.variant](node.index) 
                                        : '';
-            return `\`${node.name}\` ${tableNames} ${index}`;
+            return `\`${node.name}\` ${alias} ${index}`;
             
         },
         index : (node) => `INDEXED BY ${node.name}`,
-        column : (node) => node.name,
+        column : (node) => {
+            
+            const alias =  (node.alias)  ? `AS [${node.alias}]` 
+                                              : ``;
+            const index = (node.index) ? defaultGenerator[node.index.type][node.index.variant](node.index) 
+                                       : '';
+            return `${node.name} ${alias} ${index}`;
+            
+        },
         'function' : (node) => node.name,
     },
     literal : {
