@@ -164,7 +164,13 @@ const defaultGenerator = {
             const on = defaultGenerator[node.on.type][node.on.variant](node.on, state);
             return `${state.indent}ON ${on}${state.lineEnd}`;
         },
-        'primary key' : () => `PRIMARY KEY`
+        'primary key' : () => `PRIMARY KEY`,
+        'not null': () => `NOT NULL`,
+        unique : () => `UNIQUE`,
+        check : (node, state) => {
+            const check = defaultGenerator[node.expression.type][node.expression.variant](node.expression, state);
+            return `CHECK ${check}`;
+        }
     },
     definition : {
         column : (node, state) => {
