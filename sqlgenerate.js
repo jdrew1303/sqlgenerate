@@ -64,8 +64,14 @@ const defaultGenerator = {
             const compound = compoundMap(node.compound);
             return `${firstStatement}${compound}`;
         },
-        create : () => {
-            return ``;
+        create : (node, state) => {
+            const tableName = defaultGenerator[node.name.type][node.name.variant](node.name, state);
+
+            const mapList = map((n) => defaultGenerator[n.type][n.variant](n, state));
+            const definitionsList = compose(join(`,${state.lineEnd}`), mapList);
+            const definitions = definitionsList(node.definition);
+
+            return `CREATE TABLE ${tableName} (${state.lineEnd}${definitions}${state.lineEnd})`;
         }
     },
     compound : {
@@ -145,7 +151,6 @@ const defaultGenerator = {
             return `(${source}) AS ${sourceAlias}${state.lineEnd}${join}`;
         }
     },
-    
     join : {
         join : (node, state) => {
             const source = defaultGenerator[node.source.type][node.source.variant](node.source, state);
@@ -158,6 +163,25 @@ const defaultGenerator = {
         join : (node, state) => {
             const on = defaultGenerator[node.on.type][node.on.variant](node.on, state);
             return `${state.indent}ON ${on}${state.lineEnd}`;
+        },
+        'primary key' : () => `PRIMARY KEY`
+    },
+    definition : {
+        column : (node, state) => {
+            const datatype = defaultGenerator[node.datatype.type][node.datatype.variant](node.datatype, state);
+            
+            const mapList = map((n) => defaultGenerator[n.type][n.variant](n, state));
+            const constraintsList = compose(join(' '), mapList);
+            const constraints = constraintsList(node.definition);
+            
+            return `${node.name} ${datatype} ${constraints}`;
+        }
+    },
+    datatype : {
+        int : (node) => `${node.variant}`,
+        varchar : (node, state) => {
+            const arg = defaultGenerator[node.args.type][node.args.variant](node.args, state);
+            return `varchar(${arg})`;
         }
     }
 };
