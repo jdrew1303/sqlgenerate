@@ -65,7 +65,10 @@ const defaultGenerator = {
     compound : {
         union : (node, state) => {
             const statement = defaultGenerator[node.statement.type][node.statement.variant](node.statement, state);
-            return `UNION${state.lineEnd}${statement}`;
+            return `${node.variant.toLocaleUpperCase()}${state.lineEnd}${statement}`;
+        },
+        get 'union all'(){
+            return this.union;
         }
     },
     identifier : {
