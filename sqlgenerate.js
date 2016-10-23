@@ -63,6 +63,9 @@ const defaultGenerator = {
             const compoundMap = map((n) => defaultGenerator[n.type][n.variant](n, state));
             const compound = compoundMap(node.compound);
             return `${firstStatement}${compound}`;
+        },
+        create : () => {
+            return ``;
         }
     },
     compound : {
