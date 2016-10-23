@@ -12,72 +12,75 @@ var join = R.join;
 var head = R.head;
 var compose = R.compose;
 
+const INDENT = '\t';
+const LINE_END = '\n';
+
 const defaultGenerator = {
     statement : {
-        list : (node, state) => {
-            const mapList = map((n) => defaultGenerator[n.type][n.variant](n, state));
+        list : (node) => {
+            const mapList = map((n) => defaultGenerator[n.type][n.variant](n));
             return join('\n',mapList(node.statement));
         },
-        select : (node, state) => {
+        select : (node) => {
             const mapList = map((n) => {
-                return (n.type === 'function') ? defaultGenerator['function'](n, state) 
-                                                  : defaultGenerator[n.type][n.variant](n, state);
+                return (n.type === 'function') ? defaultGenerator['function'](n) 
+                                                  : defaultGenerator[n.type][n.variant](n);
             });
             const argsList = compose(join(', '), mapList);
             var str = ['SELECT '];
             if (node.result) {
                 const results = argsList(node.result);
-                str.push(`${results}${state.lineEnd}`);
+                str.push(`${results}${LINE_END}`);
             }
             if (node.from) {
-                const from = defaultGenerator[node.from.type][node.from.variant](node.from, state);
-                str.push(`${state.indent}FROM ${from}${state.lineEnd}`);
+                const from = defaultGenerator[node.from.type][node.from.variant](node.from);
+                str.push(`${INDENT}FROM ${from}${LINE_END}`);
             }
             if (node.where) {
                 const whereNode = head(node.where);
-                const where = defaultGenerator[whereNode.type][whereNode.variant](whereNode, state);
-                str.push(`${state.indent}WHERE ${where}${state.lineEnd}`);
+                const where = defaultGenerator[whereNode.type][whereNode.variant](whereNode);
+                str.push(`${INDENT}WHERE ${where}${LINE_END}`);
             }
             if (node.group) {
-                const group = defaultGenerator[node.group.type][node.group.variant](node.group, state);
-                str.push(`${state.indent}GROUP BY ${group}${state.lineEnd}`);
+                const group = defaultGenerator[node.group.type][node.group.variant](node.group);
+                str.push(`${INDENT}GROUP BY ${group}${LINE_END}`);
             }
             if (node.having) {
-                const having = defaultGenerator[node.having.type][node.having.variant](node.having, state);
-                str.push(`${state.indent}HAVING ${having}${state.lineEnd}`);
+                const having = defaultGenerator[node.having.type][node.having.variant](node.having);
+                str.push(`${INDENT}HAVING ${having}${LINE_END}`);
             }
             if (node.order) {
                 const orderNode = head(node.order);
-                const order = defaultGenerator[orderNode.type][orderNode.variant](orderNode, state);
-                str.push(`${state.indent}ORDER BY ${order}${state.lineEnd}`);
+                const order = defaultGenerator[orderNode.type][orderNode.variant](orderNode);
+                str.push(`${INDENT}ORDER BY ${order}${LINE_END}`);
             }
             if (node.limit) {
-                const limit = defaultGenerator[node.limit.type][node.limit.variant](node.limit, state);
-                str.push(`${state.indent}${limit}`);
+                const limit = defaultGenerator[node.limit.type][node.limit.variant](node.limit);
+                str.push(`${INDENT}${limit}`);
             }
             return str.join('');
         },
-        compound : (node, state) => {
-            const firstStatement = defaultGenerator[node.statement.type][node.statement.variant](node.statement, state);
+        compound : (node) => {
+            const firstStatement = defaultGenerator[node.statement.type][node.statement.variant](node.statement);
             
-            const compoundMap = map((n) => defaultGenerator[n.type][n.variant](n, state));
+            const compoundMap = map((n) => defaultGenerator[n.type][n.variant](n));
             const compound = compoundMap(node.compound);
             return `${firstStatement}${compound}`;
         },
-        create : (node, state) => {
-            const tableName = defaultGenerator[node.name.type][node.name.variant](node.name, state);
+        create : (node) => {
+            const tableName = defaultGenerator[node.name.type][node.name.variant](node.name);
 
-            const mapList = map((n) => defaultGenerator[n.type][n.variant](n, state));
-            const definitionsList = compose(join(`,${state.lineEnd}`), mapList);
+            const mapList = map((n) => defaultGenerator[n.type][n.variant](n));
+            const definitionsList = compose(join(`,${LINE_END}`), mapList);
             const definitions = definitionsList(node.definition);
 
-            return `CREATE TABLE ${tableName} (${state.lineEnd}${definitions}${state.lineEnd})`;
+            return `CREATE TABLE ${tableName} (${LINE_END}${definitions}${LINE_END})`;
         }
     },
     compound : {
-        union : (node, state) => {
-            const statement = defaultGenerator[node.statement.type][node.statement.variant](node.statement, state);
-            return `${node.variant.toLocaleUpperCase()}${state.lineEnd}${statement}`;
+        union : (node) => {
+            const statement = defaultGenerator[node.statement.type][node.statement.variant](node.statement);
+            return `${node.variant.toLocaleUpperCase()}${LINE_END}${statement}`;
         },
         get 'union all'(){
             return this.union;
@@ -111,72 +114,72 @@ const defaultGenerator = {
         decimal : (node) => `${node.value}`
     },
     expression : {
-        operation : (node, state) => {
-            function side (node, state) {
-                return (node.type === 'function') ? defaultGenerator['function'](node, state) 
-                                                  : defaultGenerator[node.type][node.variant](node, state);
+        operation : (node) => {
+            function side (node) {
+                return (node.type === 'function') ? defaultGenerator['function'](node) 
+                                                  : defaultGenerator[node.type][node.variant](node);
             }
-            const left = side(node.left, state);
-            const right = side(node.right, state);
+            const left = side(node.left);
+            const right = side(node.right);
             return `(${left} ${node.operation} ${right})`;
         },
-        list : (node, state) => {
-            const mapList = map((n) => defaultGenerator[n.type][n.variant](n, state));
+        list : (node) => {
+            const mapList = map((n) => defaultGenerator[n.type][n.variant](n));
             const argsList = compose(join(', '), mapList);
             return argsList(node.expression);
         },
-        order : (node, state) => {
-            const expression = defaultGenerator[node.expression.type][node.expression.variant](node.expression, state);
+        order : (node) => {
+            const expression = defaultGenerator[node.expression.type][node.expression.variant](node.expression);
             const direction = node.direction;
             return `${expression} ${direction.toLocaleUpperCase()}`;
         },
-        limit : (node, state) => {
-            const limit = defaultGenerator[node.start.type][node.start.variant](node.start, state);
-            const offset = defaultGenerator[node.offset.type][node.offset.variant](node.offset, state);
-            return `LIMIT ${limit}${state.lineEnd}${state.indent}OFFSET ${offset}`;
+        limit : (node) => {
+            const limit = defaultGenerator[node.start.type][node.start.variant](node.start);
+            const offset = defaultGenerator[node.offset.type][node.offset.variant](node.offset);
+            return `LIMIT ${limit}${LINE_END}${INDENT}OFFSET ${offset}`;
         }
     },
-    'function' : (node, state) => {
-        const name = defaultGenerator[node.name.type][node.name.variant](node.name, state);
-        const args = defaultGenerator[node.args.type][node.args.variant](node.args, state);
+    'function' : (node) => {
+        const name = defaultGenerator[node.name.type][node.name.variant](node.name);
+        const args = defaultGenerator[node.args.type][node.args.variant](node.args);
         const alias =  (node.alias)  ? `AS ${node.alias}` : ``;
         return `${name.toLocaleUpperCase()}(${args}) ${alias}`;
     },
     map : {
-        join : (node, state) => {
-            const source = defaultGenerator[node.source.type][node.source.variant](node.source, state);
+        join : (node) => {
+            const source = defaultGenerator[node.source.type][node.source.variant](node.source);
             const sourceAlias = (node.source.alias)? node.source.alias : '';
             const joinNode = head(node.map);
-            const join = defaultGenerator[joinNode.type][joinNode.variant](joinNode, state);
-            return `(${source}) AS ${sourceAlias}${state.lineEnd}${join}`;
+            const join = defaultGenerator[joinNode.type][joinNode.variant](joinNode);
+            return `(${source}) AS ${sourceAlias}${LINE_END}${join}`;
         }
     },
     join : {
-        join : (node, state) => {
-            const source = defaultGenerator[node.source.type][node.source.variant](node.source, state);
-            const constraint = defaultGenerator[node.constraint.type][node.constraint.variant](node.constraint, state);
+        join : (node) => {
+            const source = defaultGenerator[node.source.type][node.source.variant](node.source);
+            const constraint = defaultGenerator[node.constraint.type][node.constraint.variant](node.constraint);
             
-            return `${state.indent}JOIN ${source}${state.lineEnd}${constraint}`;
+            return `${INDENT}JOIN ${source}${LINE_END}${constraint}`;
         }
     },
     constraint : {
-        join : (node, state) => {
-            const on = defaultGenerator[node.on.type][node.on.variant](node.on, state);
-            return `${state.indent}ON ${on}${state.lineEnd}`;
+        join : (node) => {
+            const on = defaultGenerator[node.on.type][node.on.variant](node.on);
+            return `${INDENT}ON ${on}${LINE_END}`;
         },
         'primary key' : () => `PRIMARY KEY`,
         'not null': () => `NOT NULL`,
         unique : () => `UNIQUE`,
-        check : (node, state) => {
-            const check = defaultGenerator[node.expression.type][node.expression.variant](node.expression, state);
+        check : (node) => {
+            const check = defaultGenerator[node.expression.type][node.expression.variant](node.expression);
             return `CHECK ${check}`;
         }
     },
     definition : {
-        column : (node, state) => {
-            const datatype = defaultGenerator[node.datatype.type][node.datatype.variant](node.datatype, state);
+        column : (node) => {
+            const datatype = defaultGenerator[node.datatype.type][node.datatype.variant](node.datatype);
             
-            const mapList = map((n) => defaultGenerator[n.type][n.variant](n, state));
+            const mapList = map((n) => defaultGenerator[n.type][n.variant](n));
             const constraintsList = compose(join(' '), mapList);
             const constraints = constraintsList(node.definition);
             
@@ -185,41 +188,14 @@ const defaultGenerator = {
     },
     datatype : {
         int : (node) => `${node.variant}`,
-        varchar : (node, state) => {
-            const arg = defaultGenerator[node.args.type][node.args.variant](node.args, state);
+        varchar : (node) => {
+            const arg = defaultGenerator[node.args.type][node.args.variant](node.args);
             return `varchar(${arg})`;
         }
     }
 };
 
-function generate( node, options ) {
-	/*
-	Returns a string representing the rendered code of the provided AST `node`.
-	The `options` are:
-	- `indent`: string to use for indentation (defaults to `\t`)
-	- `lineEnd`: string to use for line endings (defaults to `\n`)
-	- `startingIndentLevel`: indent level to start from (default to `0`)
-	- `output`: output stream to write the rendered code to (defaults to `null`)
-	- `generator`: custom code generator (defaults to `defaultGenerator`)
-	*/
-	const state = options == null ? {
-		generator: defaultGenerator,
-		indent: '\t',
-		lineEnd: '\n',
-		indentLevel: 0,
-	} : {
-		// Functional options
-		generator: options.generator ? options.generator : defaultGenerator,
-		// Formating options
-		indent: options.indent != null ? options.indent : '\t',
-		lineEnd: options.lineEnd != null ? options.lineEnd : '\n',
-		indentLevel: options.startingIndentLevel != null ? options.startingIndentLevel : 0
-	};
-	// Travel through the AST node and generate the code
-	return state.generator[node.type][node.variant]( node, state );
-}
-
 module.exports = {
     version         : require('./package.json').version,
-    generate        : generate
+    generate        : (n) => defaultGenerator[n.type][n.variant](n)
 };
