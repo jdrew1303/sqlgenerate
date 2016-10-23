@@ -19,7 +19,10 @@ const defaultGenerator = {
             return join('\n',mapList(node.statement));
         },
         select : (node, state) => {
-            const mapList = map((n) => defaultGenerator[n.type][n.variant](n, state));
+            const mapList = map((n) => {
+                return (n.type === 'function') ? defaultGenerator['function'](n, state) 
+                                                  : defaultGenerator[n.type][n.variant](n, state);
+            });
             const argsList = compose(join(', '), mapList);
             var str = ['SELECT '];
             if (node.result) {
@@ -72,7 +75,7 @@ const defaultGenerator = {
         }
     },
     identifier : {
-        star : () => '*',
+        star : (n) => n.name,
         table : (node) => {
             
             const alias =  (node.alias)  ? `AS ${node.alias}` 
@@ -127,8 +130,8 @@ const defaultGenerator = {
     'function' : (node, state) => {
         const name = defaultGenerator[node.name.type][node.name.variant](node.name, state);
         const args = defaultGenerator[node.args.type][node.args.variant](node.args, state);
-        
-        return `${name.toLocaleUpperCase()}(${args})`;
+        const alias =  (node.alias)  ? `AS ${node.alias}` : ``;
+        return `${name.toLocaleUpperCase()}(${args}) ${alias}`;
     },
     map : {
         join : (node, state) => {
