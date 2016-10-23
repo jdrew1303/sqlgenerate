@@ -29,6 +29,7 @@
     "gulp-git": "^1.0.1",
     "gulp-tag-version": "^1.2.1",
     "jshint": "^2.5.6",
+    "lodash": "^4.16.4",
     "mocha": "^2.1.0",
     "sqlite-parser": "^1.0.0-rc1"
   },
