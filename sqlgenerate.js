@@ -54,7 +54,7 @@ const defaultGenerator = {
         star : () => '*',
         table : (node) => {
             return (node.alias)  ? `\`${node.name}\` ${node.alias}` 
-                                 : `${node.name}`
+                                 : `${node.name}`;
             
         },
         column : (node) => node.name,
