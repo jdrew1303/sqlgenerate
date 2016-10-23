@@ -1,5 +1,5 @@
 'use strict';
-
+require('babel-polyfill');
 var R = require('ramda');
 var map = R.map;
 var join = R.join;
