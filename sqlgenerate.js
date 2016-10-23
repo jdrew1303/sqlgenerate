@@ -192,22 +192,6 @@ const defaultGenerator = {
     }
 };
 
-class Stream {
-
-	constructor() {
-		this.data = '';
-	}
-	
-	write( string ) {
-		this.data += string;
-	}
-
-	toString() {
-		return this.data;
-	}
-
-}
-
 function generate( node, options ) {
 	/*
 	Returns a string representing the rendered code of the provided AST `node`.
@@ -219,14 +203,12 @@ function generate( node, options ) {
 	- `generator`: custom code generator (defaults to `defaultGenerator`)
 	*/
 	const state = options == null ? {
-		output: new Stream(),
 		generator: defaultGenerator,
 		indent: '\t',
 		lineEnd: '\n',
 		indentLevel: 0,
 	} : {
 		// Functional options
-		output: options.output ? options.output : new Stream(),
 		generator: options.generator ? options.generator : defaultGenerator,
 		// Formating options
 		indent: options.indent != null ? options.indent : '\t',
@@ -235,8 +217,6 @@ function generate( node, options ) {
 	};
 	// Travel through the AST node and generate the code
 	return state.generator[node.type][node.variant]( node, state );
-// 	const { output } = state
-// 	return output.data != null ? output.data : output
 }
 
 module.exports = {
