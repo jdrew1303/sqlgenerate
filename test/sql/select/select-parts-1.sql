@@ -1,7 +1,7 @@
 SELECT
   *
 FROM
-  `hats` h
+  `hats` AS h
 WHERE
   (h.color == 'red')
 GROUP BY

@@ -1,3 +1,3 @@
 SELECT *
-FROM bananas
+FROM `bananas`
 WHERE (color = 'red')

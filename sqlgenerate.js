@@ -74,10 +74,15 @@ const defaultGenerator = {
     identifier : {
         star : () => '*',
         table : (node) => {
-            return (node.alias)  ? `\`${node.name}\` ${node.alias}` 
-                                 : `${node.name}`;
+            
+            const tableNames =  (node.alias)  ? `AS ${node.alias}` 
+                                              : ``;
+            const index = (node.index) ? defaultGenerator[node.index.type][node.index.variant](node.index) 
+                                       : '';
+            return `\`${node.name}\` ${tableNames} ${index}`;
             
         },
+        index : (node) => `INDEXED BY ${node.name}`,
         column : (node) => node.name,
         'function' : (node) => node.name,
     },

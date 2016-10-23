@@ -1,6 +1,6 @@
 SELECT a.color
 FROM (
   SELECT b.color
-  FROM `bananas` b
-) AS z JOIN `apples` a
+  FROM `bananas` AS b
+) AS z JOIN `apples` AS a
 ON (a.color = b.color)
