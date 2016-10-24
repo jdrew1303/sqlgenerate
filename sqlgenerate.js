@@ -62,10 +62,19 @@ const generator = {
             return `${firstStatement}${compound}`;
         },
         create : (n) => {
+            const containsSelect = (s) => (s.indexOf('SELECT') !== -1);
+            
             const tableName = recurse(generator)(n.name);
             const definitionsList = compose(join(`,${LINE_END}`), mapr(generator));
             const definitions = definitionsList(n.definition);
-            return `CREATE TABLE ${tableName} (${LINE_END}${definitions}${LINE_END})`;
+            
+            // Can probable be refactored to be a bit more elegant... :/ 
+            const defaultCreateSyntax = `CREATE TABLE ${tableName} (${LINE_END}${definitions}${LINE_END})`;
+            const createTableFromSelect = `CREATE TABLE ${tableName} AS${LINE_END}${definitions}${LINE_END}`;
+            
+            return containsSelect(definitions) ? createTableFromSelect : defaultCreateSyntax;
+                
+                
         }
     },
     compound : {
@@ -95,7 +104,8 @@ const generator = {
     },
     literal : {
         text : (n) => `'${n.value}'`,
-        decimal : (n) => `${n.value}`
+        decimal : (n) => `${n.value}`,
+        null : () => 'NULL'
     },
     expression : {
         operation : (n) => {

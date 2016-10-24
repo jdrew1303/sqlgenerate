@@ -1,10 +1,10 @@
-CREATE TABLE [bees] AS
+CREATE TABLE `bees` AS
   SELECT
     name,
     color,
     legs,
     id
   FROM
-    [old_bees]
+    `old_bees`
   WHERE
-    name IS NOT NULL
+    (name IS NOT NULL)
