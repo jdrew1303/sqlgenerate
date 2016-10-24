@@ -16,9 +16,9 @@ const mapr = compose(map, recurse);
 
 const generator = {
     statement : {
-        list : (node) => {
-            const s = compose(join('\n'), mapr(generator));
-            return s(node.statement);
+        list : (n) => {
+            const statements = compose(join('\n'), mapr(generator));
+            return statements(n.statement);
         },
         select : (n) => {
             const recurser = recurse(generator);
@@ -165,6 +165,10 @@ const generator = {
             const constraintsList = compose(join(' '), map(recurser));
             const constraints = constraintsList(n.definition);
             return `${n.name} ${datatype} ${constraints}`;
+        },
+        constraint : (n) => {
+            const recurser = recurse(generator);
+            return recurser(head(n.definition));
         }
     },
     datatype : {
