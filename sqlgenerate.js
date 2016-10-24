@@ -2,7 +2,7 @@
 
 // Needed to allow its use in older versions of Node and Browsers.
 import 'babel-polyfill';
-import {map, join, head, compose, curry} from 'ramda';
+import {map, join, head, compose, curry, toUpper} from 'ramda';
 
 const INDENT = '\t';
 const LINE_END = '\n';
@@ -20,66 +20,58 @@ const generator = {
             const s = compose(join('\n'), mapr(generator));
             return s(node.statement);
         },
-        select : (node) => {
+        select : (n) => {
             const recurser = recurse(generator);
             const argsList = compose(join(', '), mapr(generator));
             
             var str = ['SELECT '];
-            if (node.result) {
-                const results = argsList(node.result);
+            if (n.result) {
+                const results = argsList(n.result);
                 str.push(`${results}${LINE_END}`);
             }
-            if (node.from) {
-                const from = recurser(node.from);
+            if (n.from) {
+                const from = recurser(n.from);
                 str.push(`${INDENT}FROM ${from}${LINE_END}`);
             }
-            if (node.where) {
-                const whereNode = head(node.where);
+            if (n.where) {
+                const whereNode = head(n.where);
                 const where = recurser(whereNode);
                 str.push(`${INDENT}WHERE ${where}${LINE_END}`);
             }
-            if (node.group) {
-                const group = recurser(node.group);
+            if (n.group) {
+                const group = recurser(n.group);
                 str.push(`${INDENT}GROUP BY ${group}${LINE_END}`);
             }
-            if (node.having) {
-                const having = recurser(node.having);
+            if (n.having) {
+                const having = recurser(n.having);
                 str.push(`${INDENT}HAVING ${having}${LINE_END}`);
             }
-            if (node.order) {
-                const orderNode = head(node.order);
-                const order = recurser(orderNode);
+            if (n.order) {
+                const order = recurser(head(n.order));
                 str.push(`${INDENT}ORDER BY ${order}${LINE_END}`);
             }
-            if (node.limit) {
-                const limit = recurser(node.limit);
+            if (n.limit) {
+                const limit = recurser(n.limit);
                 str.push(`${INDENT}${limit}`);
             }
             return str.join('');
         },
-        compound : (node) => {
-            const recurser = recurse(generator);
-            const firstStatement = recurser(node.statement);
-            
-            const compound = map(recurser)(node.compound);
+        compound : (n) => {
+            const firstStatement = recurse(generator)(n.statement);
+            const compound = mapr(generator)(n.compound);
             return `${firstStatement}${compound}`;
         },
-        create : (node) => {
-            const recurser = recurse(generator);
-            const tableName = recurser(node.name);
-
-            const mapList = map(recurser);
-            const definitionsList = compose(join(`,${LINE_END}`), mapList);
-            const definitions = definitionsList(node.definition);
-
+        create : (n) => {
+            const tableName = recurse(generator)(n.name);
+            const definitionsList = compose(join(`,${LINE_END}`), mapr(generator));
+            const definitions = definitionsList(n.definition);
             return `CREATE TABLE ${tableName} (${LINE_END}${definitions}${LINE_END})`;
         }
     },
     compound : {
-        union : (node) => {
-            const recurser = recurse(generator);
-            const statement = recurser(node.statement);
-            return `${node.variant.toLocaleUpperCase()}${LINE_END}${statement}`;
+        union : (n) => {
+            const statement = recurse(generator)(n.statement);
+            return `${toUpper(n.variant)}${LINE_END}${statement}`;
         },
         get 'union all'(){
             return this.union;
@@ -87,109 +79,98 @@ const generator = {
     },
     identifier : {
         star : (n) => n.name,
-        table : (node) => {
-            const recurser = recurse(generator);
-            const alias =  (node.alias)  ? `AS ${node.alias}` 
-                                              : ``;
-            const index = (node.index) ? recurser(node.index) 
-                                       : '';
-            return `\`${node.name}\` ${alias} ${index}`;
-            
+        table : (n) => {
+            const alias =  (n.alias)  ? `AS ${n.alias}` : '';
+            const index = (n.index) ? recurse(generator)(n.index) : '';
+            return `\`${n.name}\` ${alias} ${index}`;
         },
-        index : (node) => `INDEXED BY ${node.name}`,
-        column : (node) => {
+        index : (n) => `INDEXED BY ${n.name}`,
+        column : (n) => {
             const recurser = recurse(generator);
-            const alias =  (node.alias)  ? `AS [${node.alias}]` 
-                                              : ``;
-            const index = (node.index) ? recurser(node.index) 
-                                       : '';
-            return `${node.name} ${alias} ${index}`;
-            
+            const alias =  (n.alias) ? `AS [${n.alias}]` : '';
+            const index = (n.index) ? recurser(n.index) : '';
+            return `${n.name} ${alias} ${index}`;
         },
-        'function' : (node) => node.name,
+        'function' : (n) => n.name,
     },
     literal : {
-        text : (node) => `'${node.value}'`,
-        decimal : (node) => `${node.value}`
+        text : (n) => `'${n.value}'`,
+        decimal : (n) => `${n.value}`
     },
     expression : {
-        operation : (node) => {
+        operation : (n) => {
             const recurser = recurse(generator);
-            const left = recurser(node.left);
-            const right = recurser(node.right);
-            return `(${left} ${node.operation} ${right})`;
+            const left = recurser(n.left);
+            const right = recurser(n.right);
+            return `(${left} ${n.operation} ${right})`;
         },
-        list : (node) => {
+        list : (n) => {
             const argsList = compose(join(', '), mapr(generator));
-            return argsList(node.expression);
+            return argsList(n.expression);
         },
-        order : (node) => {
+        order : (n) => {
             const recurser = recurse(generator);
-            const expression = recurser(node.expression);
-            const direction = node.direction;
-            return `${expression} ${direction.toLocaleUpperCase()}`;
+            const expression = recurser(n.expression);
+            const direction = n.direction;
+            return `${expression} ${toUpper(direction)}`;
         },
-        limit : (node) => {
+        limit : (n) => {
             const recurser = recurse(generator);
-            const limit = recurser(node.start);
-            const offset = recurser(node.offset);
+            const limit = recurser(n.start);
+            const offset = recurser(n.offset);
             return `LIMIT ${limit}${LINE_END}${INDENT}OFFSET ${offset}`;
         }
     },
-    'function' : (node) => {
+    'function' : (n) => {
         const recurser = recurse(generator);
-        const name = recurser(node.name);
-        const args = recurser(node.args);
-        const alias =  (node.alias)  ? `AS ${node.alias}` : ``;
-        return `${name.toLocaleUpperCase()}(${args}) ${alias}`;
+        const name = toUpper(recurser(n.name));
+        const args = recurser(n.args);
+        const alias =  (n.alias)  ? `AS ${n.alias}` : '';
+        return `${name}(${args}) ${alias}`;
     },
     map : {
-        join : (node) => {
+        join : (n) => {
             const recurser = recurse(generator);
-            const source = recurser(node.source);
-            const sourceAlias = (node.source.alias)? node.source.alias : '';
-            const joinNode = head(node.map);
-            const join = recurser(joinNode);
+            const source = recurser(n.source);
+            const sourceAlias = (n.source.alias)? n.source.alias : '';
+            const join = recurser(head(n.map));
             return `(${source}) AS ${sourceAlias}${LINE_END}${join}`;
         }
     },
     join : {
-        join : (node) => {
+        join : (n) => {
             const recurser = recurse(generator);
-            const source = recurser(node.source);
-            const constraint = recurser(node.constraint);
+            const source = recurser(n.source);
+            const constraint = recurser(n.constraint);
             return `${INDENT}JOIN ${source}${LINE_END}${constraint}`;
         }
     },
     constraint : {
-        join : (node) => {
-            const recurser = recurse(generator);
-            const on = recurser(node.on);
+        join : (n) => {
+            const on = recurse(generator)(n.on);
             return `${INDENT}ON ${on}${LINE_END}`;
         },
         'primary key' : () => `PRIMARY KEY`,
         'not null': () => `NOT NULL`,
         unique : () => `UNIQUE`,
-        check : (node) => {
-            const recurser = recurse(generator);
-            const check = recurser(node.expression);
+        check : (n) => {
+            const check = recurse(generator)(n.expression);
             return `CHECK ${check}`;
         }
     },
     definition : {
-        column : (node) => {
+        column : (n) => {
             const recurser = recurse(generator);
-            const datatype = recurser(node.datatype);
+            const datatype = recurser(n.datatype);
             const constraintsList = compose(join(' '), map(recurser));
-            const constraints = constraintsList(node.definition);
-            return `${node.name} ${datatype} ${constraints}`;
+            const constraints = constraintsList(n.definition);
+            return `${n.name} ${datatype} ${constraints}`;
         }
     },
     datatype : {
-        int : (node) => `${node.variant}`,
-        varchar : (node) => {
-            const recurser = recurse(generator);
-            const arg = recurser(node.args);
+        int : (n) => `${n.variant}`,
+        varchar : (n) => {
+            const arg = recurse(generator)(n.args);
             return `varchar(${arg})`;
         }
     }
