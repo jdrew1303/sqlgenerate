@@ -2,7 +2,8 @@
 
 // Needed to allow its use in older versions of Node and Browsers.
 import 'babel-polyfill';
-import {map, join, head, compose, curry, toUpper} from 'ramda';
+import {map, join, head, compose, curry, toUpper, isNil} from 'ramda';
+import {} from 'underscore.string.fp';
 
 const INDENT = '\t';
 const LINE_END = '\n';
@@ -62,7 +63,7 @@ const generator = {
             return `${firstStatement}${compound}`;
         },
         create : (n) => {
-            const containsSelect = (s) => (s.indexOf('SELECT') !== -1);
+            var isCreateAsSyntax = (s) => (s.indexOf('SELECT') !== -1);
             
             const tableName = recurse(generator)(n.name);
             const definitionsList = compose(join(`,${LINE_END}`), mapr(generator));
@@ -72,9 +73,8 @@ const generator = {
             const defaultCreateSyntax = `CREATE TABLE ${tableName} (${LINE_END}${definitions}${LINE_END})`;
             const createTableFromSelect = `CREATE TABLE ${tableName} AS${LINE_END}${definitions}${LINE_END}`;
             
-            return containsSelect(definitions) ? createTableFromSelect : defaultCreateSyntax;
-                
-                
+            return isCreateAsSyntax(definitions) ? createTableFromSelect 
+                                                 : defaultCreateSyntax;
         }
     },
     compound : {
@@ -166,6 +166,10 @@ const generator = {
         check : (n) => {
             const check = recurse(generator)(n.expression);
             return `CHECK ${check}`;
+        },
+        'foreign key' : (n) => {
+            const recurser = recurse(generator);
+            return recurser(n.references);
         }
     },
     definition : {
@@ -178,6 +182,12 @@ const generator = {
         },
         constraint : (n) => {
             const recurser = recurse(generator);
+            const hasForeignKey = (n) => !isNil(n.columns);
+            if(hasForeignKey(n)){
+                const childKey = recurser(head(n.columns));
+                const parentKey = recurser(head(n.definition));
+                return `FOREIGN KEY (${childKey}) REFERENCES ${parentKey}`;
+            } 
             return recurser(head(n.definition));
         }
     },
