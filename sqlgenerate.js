@@ -101,6 +101,10 @@ const generator = {
             return `${n.name} ${alias} ${index}`;
         },
         'function' : (n) => n.name,
+        expression : (n) => {
+            const m = mapr(generator);
+            return `${n.name}(${m(n.columns)})`;
+        }
     },
     literal : {
         text : (n) => `'${n.value}'`,
@@ -169,7 +173,8 @@ const generator = {
         },
         'foreign key' : (n) => {
             const recurser = recurse(generator);
-            return recurser(n.references);
+            const ref = recurser(n.references);
+            return `REFERENCES ${ref}`;
         }
     },
     definition : {
@@ -186,7 +191,7 @@ const generator = {
             if(hasForeignKey(n)){
                 const childKey = recurser(head(n.columns));
                 const parentKey = recurser(head(n.definition));
-                return `FOREIGN KEY (${childKey}) REFERENCES ${parentKey}`;
+                return `FOREIGN KEY (${childKey}) ${parentKey}`;
             } 
             return recurser(head(n.definition));
         }
