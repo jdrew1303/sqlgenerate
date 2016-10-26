@@ -63,18 +63,33 @@ const generator = {
             return `${firstStatement}${compound}`;
         },
         create : (n) => {
-            var isCreateAsSyntax = (s) => (s.indexOf('SELECT') !== -1);
+            const recurser = recurse(generator);
+            const isCreateOfType = (n) => compose(equals(n), prop('format'));
+            const isCreateIndex = isCreateOfType('index');
+            const isCreateTable = isCreateOfType('table');
             
-            const tableName = recurse(generator)(n.name);
-            const definitionsList = compose(join(`,${LINE_END}`), mapr(generator));
-            const definitions = definitionsList(n.definition);
+            const isCreateAsSyntax = (s) => (s.indexOf('SELECT') !== -1);
             
-            // Can probable be refactored to be a bit more elegant... :/ 
-            const defaultCreateSyntax = `CREATE TABLE ${tableName} (${LINE_END}${definitions}${LINE_END})`;
-            const createTableFromSelect = `CREATE TABLE ${tableName} AS${LINE_END}${definitions}${LINE_END}`;
+            if (isCreateIndex(n)) {
+                const indexName = n.target.name;
+                const onColumns = recurser(n.on);
+                const where = recurser(head(n.where));
+                return `CREATE INDEX ${indexName}${LINE_END}ON ${onColumns}${LINE_END}WHERE ${where}`;
+            }
             
-            return isCreateAsSyntax(definitions) ? createTableFromSelect 
-                                                 : defaultCreateSyntax;
+            if (isCreateTable(n)) {
+                const tableName = recurse(generator)(n.name);
+                const definitionsList = compose(join(`,${LINE_END}`), mapr(generator));
+                const definitions = definitionsList(n.definition);
+                
+                // Can probable be refactored to be a bit more elegant... :/ 
+                const defaultCreateSyntax = `CREATE TABLE ${tableName} (${LINE_END}${definitions}${LINE_END})`;
+                const createTableFromSelect = `CREATE TABLE ${tableName} AS${LINE_END}${definitions}${LINE_END}`;
+                
+                return isCreateAsSyntax(definitions) ? createTableFromSelect 
+                                                     : defaultCreateSyntax;
+            }
+            return ``;
         }
     },
     compound : {
