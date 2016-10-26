@@ -2,7 +2,7 @@
 
 // Needed to allow its use in older versions of Node and Browsers.
 import 'babel-polyfill';
-import {map, join, head, compose, curry, toUpper, isNil} from 'ramda';
+import {map, join, head, compose, curry, toUpper, prop, equals, isEmpty, F} from 'ramda';
 import {} from 'underscore.string.fp';
 
 const INDENT = '\t';
@@ -141,7 +141,7 @@ const generator = {
         const args = recurser(n.args);
         const alias =  (n.alias)  ? `AS ${n.alias}` : '';
         return `${name}(${args}) ${alias}`;
-    },
+    },  
     map : {
         join : (n) => {
             const recurser = recurse(generator);
@@ -187,12 +187,25 @@ const generator = {
         },
         constraint : (n) => {
             const recurser = recurse(generator);
-            const hasForeignKey = (n) => !isNil(n.columns);
-            if(hasForeignKey(n)){
+            
+            const checkConstraint = (type) => (n) => {
+                if (isEmpty(n)) { return F;}
+                const constraintType = compose(prop('variant'), head);
+                return equals(constraintType(n), type);
+            };
+            const isForeignKey = checkConstraint('foreign key');
+            const isPrimaryKey = checkConstraint('primary key');
+    
+            if(isForeignKey(n.definition)){
                 const childKey = recurser(head(n.columns));
                 const parentKey = recurser(head(n.definition));
                 return `FOREIGN KEY (${childKey}) ${parentKey}`;
-            } 
+            }
+            if(isPrimaryKey(n.definition)){
+                const field = recurser(head(n.columns));
+                const conflict = prop('conflict', head(n.definition));
+                return `PRIMARY KEY (${field}) ON CONFLICT ${conflict}`;
+            }
             return recurser(head(n.definition));
         }
     },
