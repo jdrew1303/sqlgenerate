@@ -195,6 +195,12 @@ const generator = {
             const sourceAlias = (n.source.alias)? ` AS ${n.source.alias}` : '';
             const constraint = recurser(n.constraint);
             return `${INDENT}INNER JOIN (${source})${sourceAlias}${LINE_END}${constraint}`;
+        },
+        'left outer join' : (n) => {
+            const recurser = recurse(generator);
+            const source = recurser(n.source);
+            const constraint = recurser(n.constraint);
+            return `${INDENT}LEFT OUTER JOIN ${source}${LINE_END}${constraint}`;
         }
     },
     constraint : {
