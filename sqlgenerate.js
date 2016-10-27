@@ -15,6 +15,10 @@ const recurse = curry((generator, n) => {
 
 const mapr = compose(map, recurse);
 
+const datatype = (n) => n.variant;
+
+const containsSelect = (s) => (s.indexOf('SELECT') !== -1);
+
 const generator = {
     statement : {
         list : (n) => {
@@ -68,8 +72,6 @@ const generator = {
             const isCreateIndex = isCreateOfType('index');
             const isCreateTable = isCreateOfType('table');
             
-            const isCreateAsSyntax = (s) => (s.indexOf('SELECT') !== -1);
-            
             if (isCreateIndex(n)) {
                 const indexName = n.target.name;
                 const onColumns = recurser(n.on);
@@ -86,8 +88,8 @@ const generator = {
                 const defaultCreateSyntax = `CREATE TABLE ${tableName} (${LINE_END}${definitions}${LINE_END})`;
                 const createTableFromSelect = `CREATE TABLE ${tableName} AS${LINE_END}${definitions}${LINE_END}`;
                 
-                return isCreateAsSyntax(definitions) ? createTableFromSelect 
-                                                     : defaultCreateSyntax;
+                return containsSelect(definitions) ? createTableFromSelect 
+                                                   : defaultCreateSyntax;
             }
             return ``;
         }
@@ -170,7 +172,14 @@ const generator = {
             const source = recurser(n.source);
             const sourceAlias = (n.source.alias)? n.source.alias : '';
             const join = recurser(head(n.map));
-            return `(${source}) AS ${sourceAlias}${LINE_END}${join}`;
+            
+            // Its a select subquery
+            if (containsSelect(source)){
+                const subquery = `(${source}) AS ${sourceAlias}${LINE_END}${join}`;
+                return subquery;
+            }
+            // Its an inner join.
+            return `${source}${LINE_END}${join}`;
         }
     },
     join : {
@@ -179,6 +188,13 @@ const generator = {
             const source = recurser(n.source);
             const constraint = recurser(n.constraint);
             return `${INDENT}JOIN ${source}${LINE_END}${constraint}`;
+        },
+        'inner join' : (n) => {
+            const recurser = recurse(generator);
+            const source = recurser(n.source);
+            const sourceAlias = (n.source.alias)? ` AS ${n.source.alias}` : '';
+            const constraint = recurser(n.constraint);
+            return `${INDENT}INNER JOIN (${source})${sourceAlias}${LINE_END}${constraint}`;
         }
     },
     constraint : {
@@ -233,49 +249,49 @@ const generator = {
         }
     },
     datatype : {
-        int : (n) => `${n.variant}`,
+        int : datatype,
         varchar : (n) => {
             const arg = recurse(generator)(n.args);
-            return `varchar(${arg})`;
+            return `${n.variant}(${arg})`;
         },
-        blob : (n) => `${n.variant}`,
-        double : (n) => `${n.variant}`,
-        int8 : (n) => `${n.variant}`,
-        text : (n) => `${n.variant}`,
-        tinyint : (n) => `${n.variant}`,
-        smallint : (n) => `${n.variant}`,
-        mediumint : (n) => `${n.variant}`,
-        bigint : (n) => `${n.variant}`,
-        int4 : (n) => `${n.variant}`,
-        integer : (n) => `${n.variant}`,
-        time : (n) => `${n.variant}`,
-        timestamp : (n) => `${n.variant}`,
-        datetime : (n) => `${n.variant}`,
-        date : (n) => `${n.variant}`,
-        boolean : (n) => `${n.variant}`,
+        blob : datatype,
+        double : datatype,
+        int8 : datatype,
+        text : datatype,
+        tinyint : datatype,
+        smallint : datatype,
+        mediumint :datatype,
+        bigint : datatype,
+        int4 : datatype,
+        integer : datatype,
+        time : datatype,
+        timestamp : datatype,
+        datetime : datatype,
+        date : datatype,
+        boolean : datatype,
         decimal : (n) => {
             const arg = recurse(generator)(n.args);
-            return `decimal(${arg})`;
+            return `${n.variant}(${arg})`;
         },
-        numeric : (n) => `${n.variant}`,
-        real : (n) => `${n.variant}`,
-        float : (n) => `${n.variant}`,
-        'double precision' : (n) => `${n.variant}`,
+        numeric : datatype,
+        real : datatype,
+        float : datatype,
+        'double precision' : datatype,
         clob : (n) => {
             const arg = recurse(generator)(n.args);
-            return `clob(${arg})`;
+            return `${n.variant}(${arg})`;
         },
-        longtext : (n) => `${n.variant}`,
-        mediumtext : (n) => `${n.variant}`,
-        tinytext : (n) => `${n.variant}`,
+        longtext : datatype,
+        mediumtext : datatype,
+        tinytext : datatype,
         char : (n) => {
             const arg = recurse(generator)(n.args);
-            return `char(${arg})`;
+            return `${n.variant}(${arg})`;
         },
         nvarchar : (n) => {
             const arg = recurse(generator)(n.args);
-            return `nvarchar(${arg})`;
-        },
+            return `${n.variant}(${arg})`;
+        }
         
     }
 };
