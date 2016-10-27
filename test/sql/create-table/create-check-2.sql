@@ -5,4 +5,4 @@ CREATE TABLE `Bees` (
   legs int,
   CHECK (legs < 8),
   CHECK(wings >= 2)
-)
+);

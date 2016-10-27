@@ -7,4 +7,4 @@ CREATE TABLE `bees` AS
   FROM
     `old_bees`
   WHERE
-    (name IS NOT NULL)
+    (name IS NOT NULL);

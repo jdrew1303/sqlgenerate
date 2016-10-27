@@ -3,4 +3,4 @@ CREATE TABLE `advertisements` (
   name varchar(50),
   category varchar(15),
   cost int
-)
+);

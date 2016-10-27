@@ -13,4 +13,4 @@ ORDER BY
 LIMIT
   20
 OFFSET
-  10
+  10;

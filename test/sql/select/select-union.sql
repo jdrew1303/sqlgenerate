@@ -2,4 +2,4 @@ SELECT *
 FROM `a`
 UNION
 SELECT *
-FROM `b`
+FROM `b`;

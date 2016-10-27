@@ -2,7 +2,7 @@
 
 // Needed to allow its use in older versions of Node and Browsers.
 import 'babel-polyfill';
-import {map, join, head, compose, curry, toUpper, prop, equals, isEmpty, F} from 'ramda';
+import {map, join, head, compose, curry, toUpper, prop, equals, isEmpty, F, isArrayLike, concat, __} from 'ramda';
 import {} from 'underscore.string.fp';
 
 const INDENT = '\t';
@@ -18,7 +18,7 @@ const mapr = compose(map, recurse);
 const generator = {
     statement : {
         list : (n) => {
-            const statements = compose(join('\n'), mapr(generator));
+            const statements = compose(join('\n'), map(concat(__, ';')), mapr(generator));
             return statements(n.statement);
         },
         select : (n) => {
@@ -148,6 +148,13 @@ const generator = {
             const limit = recurser(n.start);
             const offset = recurser(n.offset);
             return `LIMIT ${limit}${LINE_END}${INDENT}OFFSET ${offset}`;
+        },
+        cast : (n) => {
+            const recurser = recurse(generator);
+            const expression = recurser(n.expression);
+            const as = recurser(n.as);
+            const alias = n.alias;
+            return `CAST(${expression} AS ${as}) AS [${alias}]`;
         }
     },
     'function' : (n) => {
@@ -190,12 +197,13 @@ const generator = {
             const recurser = recurse(generator);
             const ref = recurser(n.references);
             return `REFERENCES ${ref}`;
-        }
+        },
+        'null' : () => 'NULL'
     },
     definition : {
         column : (n) => {
             const recurser = recurse(generator);
-            const datatype = recurser(n.datatype);
+            const datatype = isArrayLike(n.datatype) ? mapr(generator, n.datatype) : recurser(n.datatype);
             const constraintsList = compose(join(' '), map(recurser));
             const constraints = constraintsList(n.definition);
             return `${n.name} ${datatype} ${constraints}`;
@@ -229,7 +237,46 @@ const generator = {
         varchar : (n) => {
             const arg = recurse(generator)(n.args);
             return `varchar(${arg})`;
-        }
+        },
+        blob : (n) => `${n.variant}`,
+        double : (n) => `${n.variant}`,
+        int8 : (n) => `${n.variant}`,
+        text : (n) => `${n.variant}`,
+        tinyint : (n) => `${n.variant}`,
+        smallint : (n) => `${n.variant}`,
+        mediumint : (n) => `${n.variant}`,
+        bigint : (n) => `${n.variant}`,
+        int4 : (n) => `${n.variant}`,
+        integer : (n) => `${n.variant}`,
+        time : (n) => `${n.variant}`,
+        timestamp : (n) => `${n.variant}`,
+        datetime : (n) => `${n.variant}`,
+        date : (n) => `${n.variant}`,
+        boolean : (n) => `${n.variant}`,
+        decimal : (n) => {
+            const arg = recurse(generator)(n.args);
+            return `decimal(${arg})`;
+        },
+        numeric : (n) => `${n.variant}`,
+        real : (n) => `${n.variant}`,
+        float : (n) => `${n.variant}`,
+        'double precision' : (n) => `${n.variant}`,
+        clob : (n) => {
+            const arg = recurse(generator)(n.args);
+            return `clob(${arg})`;
+        },
+        longtext : (n) => `${n.variant}`,
+        mediumtext : (n) => `${n.variant}`,
+        tinytext : (n) => `${n.variant}`,
+        char : (n) => {
+            const arg = recurse(generator)(n.args);
+            return `char(${arg})`;
+        },
+        nvarchar : (n) => {
+            const arg = recurse(generator)(n.args);
+            return `nvarchar(${arg})`;
+        },
+        
     }
 };
 

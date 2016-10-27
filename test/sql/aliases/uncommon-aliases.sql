@@ -2,4 +2,4 @@ select
   hat.*,
   COUNT(*) AS pants
 from
-  `hats` AS hat
+  `hats` AS hat;

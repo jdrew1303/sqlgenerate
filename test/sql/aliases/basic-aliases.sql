@@ -3,4 +3,4 @@ SELECT
   pear AS [The_Pear],
   orange AS [TheOrange],
   pineapple AS [whereKeyword]
-FROM `bananas` AS b
+FROM `bananas` AS b;

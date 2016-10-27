@@ -40,7 +40,7 @@ describe('test suite', () => {
                         var isParsible = parser(regeneratedSQL)
                         
                         expect(isParsible).to.deep.equal(ast);
-                        expect(standardiseString(sql)).to.equal(standardiseString(regeneratedSQL));
+                        expect(standardiseString(regeneratedSQL)).to.equal(standardiseString(sql));
                         done();
                     });
                 });
