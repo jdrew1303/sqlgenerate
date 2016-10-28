@@ -31,10 +31,15 @@ const generator = {
         },
         select : (n) => {
             const recurser = recurse(generator);
-            const argsList = compose(joinList, mapr(generator));
+            const recourseList = mapr(generator);
+            const argsList = compose(joinList, recourseList);
             
-            var str = ['SELECT '];
-            
+            var str = [''];
+            if (n.with) {
+                const withS = recourseList(n.with);
+                str.push(`${withS}${LINE_END}`);
+            }
+            str.push('SELECT ');
             if (n.result) {
                 const results = argsList(n.result);
                 str.push(`${results}${LINE_END}`);
@@ -220,6 +225,12 @@ const generator = {
             const as = recurser(n.as);
             const alias = (n.alias) ? `AS [${n.alias}]` : '';
             return `CAST(${expression} AS ${as})${alias}`;
+        },
+        common : (n) => {
+            const recurser = recurse(generator);
+            const expression = recurser(n.expression);
+            const target = recurser(n.target);
+            return `WITH ${target} AS (${expression})`;
         }
     },
     'function' : (n) => {
