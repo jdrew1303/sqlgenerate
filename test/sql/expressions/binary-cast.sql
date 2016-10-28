@@ -1,2 +1,2 @@
 SELECT CAST(430.120 AS VARCHAR(20))
-FROM bees
+FROM `bees`;

@@ -211,8 +211,8 @@ const generator = {
             const recurser = recurse(generator);
             const expression = recurser(n.expression);
             const as = recurser(n.as);
-            const alias = n.alias;
-            return `CAST(${expression} AS ${as}) AS [${alias}]`;
+            const alias = (n.alias) ? `AS [${n.alias}]` : '';
+            return `CAST(${expression} AS ${as})${alias}`;
         }
     },
     'function' : (n) => {
