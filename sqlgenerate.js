@@ -92,6 +92,14 @@ const generator = {
                                                    : defaultCreateSyntax;
             }
             return ``;
+        },
+        insert : (n) => {
+            const recurser = recurse(generator);
+            const into = recurser(n.into);
+            const addBrackets = map((s) => `(${s})`);
+            const valuesList = compose(join(`,${LINE_END}`), addBrackets, mapr(generator));
+            const result = valuesList(n.result);
+            return `INSERT INTO ${into}${LINE_END}VALUES ${result}`;
         }
     },
     compound : {
