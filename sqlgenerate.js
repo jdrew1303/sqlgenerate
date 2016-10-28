@@ -111,6 +111,22 @@ const generator = {
             const valuesList = compose(join(`,${LINE_END}`), addBrackets, mapr(generator));
             const result = valuesList(n.result);
             return `INSERT INTO ${into}${LINE_END}VALUES ${result}`;
+        },
+        'delete' : (n) => {
+            const recurser = recurse(generator);
+            
+            var str = ['DELETE '];
+            
+            if (n.from) {
+                const from = recurser(n.from);
+                str.push(`${INDENT}FROM ${from}${LINE_END}`);
+            }
+            if (n.where) {
+                const whereNode = head(n.where);
+                const where = recurser(whereNode);
+                str.push(`${INDENT}WHERE ${where}${LINE_END}`);
+            }
+            return str.join('');
         }
     },
     compound : {
