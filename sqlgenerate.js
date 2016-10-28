@@ -126,6 +126,10 @@ const generator = {
                 const where = recurser(whereNode);
                 str.push(`${INDENT}WHERE ${where}${LINE_END}`);
             }
+            if (n.limit) {
+                const limit = recurser(n.limit);
+                str.push(`${INDENT}${limit}`);
+            }
             return str.join('');
         }
     },
