@@ -101,6 +101,11 @@ const generator = {
             if (n.result.variant === 'default'){ 
                 return `INSERT INTO ${into}${LINE_END}DEFAULT VALUES`;
             }
+            // This is an insert into select
+            if (n.result.variant === 'select'){ 
+                const result = recurser(n.result);
+                return `INSERT INTO ${into}${LINE_END}${result}`;
+            }
             // Otherwise we build up the values to be inserted
             const addBrackets = map((s) => `(${s})`);
             const valuesList = compose(join(`,${LINE_END}`), addBrackets, mapr(generator));
