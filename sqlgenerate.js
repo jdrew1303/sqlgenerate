@@ -131,6 +131,11 @@ const generator = {
                 str.push(`${INDENT}${limit}`);
             }
             return str.join('');
+        },
+        drop : (n) => {
+            const recurser = recurse(generator);
+            const target = recurser(n.target);
+            return `DROP ${n.format} ${target}`;
         }
     },
     compound : {
