@@ -231,6 +231,28 @@ const generator = {
             const expression = recurser(n.expression);
             const target = recurser(n.target);
             return `WITH ${target} AS (${expression})`;
+        },
+        'case' : (n) => {
+            // This is a hack until the ast is standardised. 
+            // May have to use this in other areas until then.
+            const gen = (n) => generator[n.type][n.format](n);
+            const mapConditions = compose(join(LINE_END), map(gen));
+            const conditions = mapConditions(n.condition);
+            const alias = (n.alias) ? `AS [${n.alias}]` : '';
+            return `CASE ${conditions} END ${alias}`;
+        }
+    },
+    condition : {
+        when : (n) => {
+            const recurser = recurse(generator);
+            const when = recurser(n.when);
+            const then = recurser(n.then);
+            return `WHEN ${when} THEN ${then}`;
+        },
+        'else' : (n) => {
+            const recurser = recurse(generator);
+            const elseS = recurser(n.else);
+            return `ELSE ${elseS}`;
         }
     },
     'function' : (n) => {
