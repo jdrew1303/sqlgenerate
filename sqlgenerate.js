@@ -96,9 +96,12 @@ const generator = {
         insert : (n) => {
             const recurser = recurse(generator);
             const into = recurser(n.into);
+            
+            // This is an insert into default values
             if (n.result.variant === 'default'){ 
                 return `INSERT INTO ${into}${LINE_END}DEFAULT VALUES`;
             }
+            // Otherwise we build up the values to be inserted
             const addBrackets = map((s) => `(${s})`);
             const valuesList = compose(join(`,${LINE_END}`), addBrackets, mapr(generator));
             const result = valuesList(n.result);
