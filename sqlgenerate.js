@@ -74,6 +74,14 @@ const generator = {
             const isCreateOfType = (n) => compose(equals(n), prop('format'));
             const isCreateIndex = isCreateOfType('index');
             const isCreateTable = isCreateOfType('table');
+            const isCreateView = isCreateOfType('view');
+            
+            if(isCreateView(n)){
+                const viewName = recurser(n.target);
+                const result = recurser(n.result);
+                
+                return `CREATE VIEW ${viewName}${LINE_END}AS ${result}`;
+            }
             
             if (isCreateIndex(n)) {
                 const indexName = n.target.name;
@@ -168,7 +176,8 @@ const generator = {
         expression : (n) => {
             const m = mapr(generator);
             return `${n.name}(${m(n.columns)})`;
-        }
+        },
+        view : (n) => n.name
     },
     literal : {
         text : (n) => `'${n.value}'`,
