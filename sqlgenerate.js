@@ -20,6 +20,7 @@ const returnNewLine = join('\n');
 const joinList = join(', ');
 const terminateStatements = map(concat(__, ';'));
 const containsSelect = (s) => (s.indexOf('SELECT') !== -1);
+const isCreateOfType = (n) => compose(equals(n), prop('format'));
 
 const generator = {
     statement : {
@@ -71,7 +72,6 @@ const generator = {
         },
         create : (n) => {
             const recurser = recurse(generator);
-            const isCreateOfType = (n) => compose(equals(n), prop('format'));
             const isCreateIndex = isCreateOfType('index');
             const isCreateTable = isCreateOfType('table');
             const isCreateView = isCreateOfType('view');
@@ -187,6 +187,13 @@ const generator = {
     expression : {
         operation : (n) => {
             const recurser = recurse(generator);
+            const isUnaryOperation = isCreateOfType('unary');
+            if(isUnaryOperation(n)){
+                const expression = recurser(n.expression);
+                const operator = (n.operator) ? `${n.operator}` : '';
+                const alias = (n.alias) ? `AS [${n.alias}]` : '';
+                return `${operator} ${expression} ${alias}`;
+            }
             const left = recurser(n.left);
             const right = recurser(n.right);
             return `(${left} ${n.operation} ${right})`;
