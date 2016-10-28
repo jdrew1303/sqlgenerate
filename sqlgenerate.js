@@ -16,20 +16,24 @@ const recurse = curry((generator, n) => {
 const mapr = compose(map, recurse);
 
 const datatype = (n) => n.variant;
-
+const returnNewLine = join('\n');
+const joinList = join(', ');
+const terminateStatements = map(concat(__, ';'));
 const containsSelect = (s) => (s.indexOf('SELECT') !== -1);
 
 const generator = {
     statement : {
         list : (n) => {
-            const statements = compose(join('\n'), map(concat(__, ';')), mapr(generator));
+            const recourseOverList = mapr(generator);
+            const statements = compose(returnNewLine, terminateStatements, recourseOverList);
             return statements(n.statement);
         },
         select : (n) => {
             const recurser = recurse(generator);
-            const argsList = compose(join(', '), mapr(generator));
+            const argsList = compose(joinList, mapr(generator));
             
             var str = ['SELECT '];
+            
             if (n.result) {
                 const results = argsList(n.result);
                 str.push(`${results}${LINE_END}`);
@@ -39,8 +43,7 @@ const generator = {
                 str.push(`${INDENT}FROM ${from}${LINE_END}`);
             }
             if (n.where) {
-                const whereNode = head(n.where);
-                const where = recurser(whereNode);
+                const where = recurser(head(n.where));
                 str.push(`${INDENT}WHERE ${where}${LINE_END}`);
             }
             if (n.group) {
@@ -180,7 +183,7 @@ const generator = {
             return `(${left} ${n.operation} ${right})`;
         },
         list : (n) => {
-            const argsList = compose(join(', '), mapr(generator));
+            const argsList = compose(joinList, mapr(generator));
             return argsList(n.expression);
         },
         order : (n) => {
