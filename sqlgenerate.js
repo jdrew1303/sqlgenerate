@@ -187,6 +187,13 @@ const generator = {
             }
             
             return str.join('');
+        },
+        transaction : (n) => {
+            const isBegin = (action) => (action === 'begin');
+            if (isBegin(n.action)){
+                return `${n.action} ${n.defer} TRANSACTION`;
+            }
+            return `COMMIT`;
         }
     },
     compound : {
