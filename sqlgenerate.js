@@ -267,7 +267,7 @@ const generator = {
         const recurser = recurse(generator);
         const name = toUpper(recurser(n.name));
         const args = recurser(n.args);
-        const alias =  (n.alias)  ? `AS ${n.alias}` : '';
+        const alias =  (n.alias)  ? `AS \`${n.alias}\`` : '';
         return `${name}(${args}) ${alias}`;
     },  
     map : {
