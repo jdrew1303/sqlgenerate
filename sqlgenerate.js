@@ -189,11 +189,27 @@ const generator = {
             return str.join('');
         },
         transaction : (n) => {
-            const isBegin = (action) => (action === 'begin');
+            const isOfActionType = (type) => (action) => (action === type); 
+            const isBegin = isOfActionType('begin');
+            const isRollback = isOfActionType('rollback');
+            
             if (isBegin(n.action)){
                 return `${n.action} ${n.defer} TRANSACTION`;
             }
+            if (isRollback(n.action)){
+                return `ROLLBACK TRANSACTION TO SAVEPOINT ${n.savepoint.name}`;
+            }
             return `COMMIT`;
+        },
+        release : (n) => {
+            const recurser = recurse(generator);
+            const savepoint = recurser(n.target.savepoint);
+            return `RELEASE SAVEPOINT ${savepoint}`;
+        },
+        savepoint : (n) => {
+            const recurser = recurse(generator);
+            const savepoint = recurser(n.target.savepoint);
+            return `SAVEPOINT ${savepoint}`;
         }
     },
     compound : {
@@ -230,7 +246,8 @@ const generator = {
             const m = mapr(generator);
             return `\`${n.name}\`(${m(n.columns)})`;
         },
-        view : (n) => n.name
+        view : (n) => n.name,
+        savepoint : (n) => n.name
     },
     literal : {
         text : (n) => `'${n.value}'`,
