@@ -50,6 +50,13 @@ describe('test suite', () => {
 });
 
 function standardiseString(str){
-  return str.replace(/\s+/g, '')
-            .toLowerCase();
+    // We want to strip all optional items from strings before testing equality.
+    // The strings could have different options for these items and they 
+    // interfere with the tests.
+    return str.replace(/\s+/gi, '')
+              .replace(/\(*/gi, '')
+              .replace(/\)*/gi, '')
+              .replace(/\`*/gi, '')
+              .replace(/\;*/gi, '')
+              .toLowerCase();
 }

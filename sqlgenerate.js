@@ -175,12 +175,12 @@ const generator = {
             const recurser = recurse(generator);
             const alias =  (n.alias) ? `AS [${n.alias}]` : '';
             const index = (n.index) ? recurser(n.index) : '';
-            return `${n.name} ${alias} ${index}`;
+            return `\`${n.name}\` ${alias} ${index}`;
         },
         'function' : (n) => n.name,
         expression : (n) => {
             const m = mapr(generator);
-            return `${n.name}(${m(n.columns)})`;
+            return `\`${n.name}\`(${m(n.columns)})`;
         },
         view : (n) => n.name
     },
