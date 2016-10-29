@@ -58,5 +58,6 @@ function standardiseString(str){
               .replace(/\)*/gi, '')
               .replace(/\`*/gi, '')
               .replace(/\;*/gi, '')
+              .replace(/\"*/gi, '')
               .toLowerCase();
 }

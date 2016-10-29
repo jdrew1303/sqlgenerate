@@ -48,7 +48,7 @@ const generator = {
             }
             if (n.from) {
                 const from = recurser(n.from);
-                str.push(`${INDENT}FROM ${from}${LINE_END}`);
+                str.push(`${INDENT}FROM (${from})${LINE_END}`);
             }
             if (n.where) {
                 const where = recurser(head(n.where));
@@ -73,9 +73,9 @@ const generator = {
             return str.join('');
         },
         compound : (n) => {
-            const firstStatement = recurse(generator)(n.statement);
+            const statement = recurse(generator)(n.statement);
             const compound = mapr(generator)(n.compound);
-            return `${firstStatement}${compound}`;
+            return `${statement}${compound}`;
         },
         create : (n) => {
             const recurser = recurse(generator);
@@ -163,7 +163,13 @@ const generator = {
         },
         get 'union all'(){
             return this.union;
-        }
+        },
+        get 'except'(){
+            return this.union;
+        },
+        get 'intersect'(){
+            return this.union;
+        },
     },
     identifier : {
         star : (n) => n.name,
