@@ -8,9 +8,18 @@ import {} from 'underscore.string.fp';
 const INDENT = '\t';
 const LINE_END = '\n';
 
+// This allows calling a function recursivly based on node type. Some of the 
+// nodes have non-standard types and so we need to modify how we call the 
+// generator.
 const recurse = curry((generator, n) => {
-    return (n.type === 'function') ? generator['function'](n) 
-                                   : generator[n.type][n.variant](n);
+    switch (n.type) {
+        case 'function':
+            return generator['function'](n);
+        case 'assignment':
+            return generator.assignment(n);
+        default:
+            return generator[n.type][n.variant](n);
+    }
 });
 
 const mapr = compose(map, recurse);
@@ -23,6 +32,12 @@ const containsSelect = (s) => (s.indexOf('SELECT') !== -1);
 const isOfFormat = (n) => compose(equals(n), prop('format'));
 
 const generator = {
+    assignment : (n) => {
+        const recurser = recurse(generator);
+        const target = recurser(n.target);
+        const value = recurser(n.value);
+        return `${target} = ${value}`;
+    },
     statement : {
         list : (n) => {
             const recourseOverList = mapr(generator);
@@ -154,6 +169,24 @@ const generator = {
             const recurser = recurse(generator);
             const target = recurser(n.target);
             return `DROP ${n.format} ${target}`;
+        },
+        update : (n) => {
+            const recurser = recurse(generator);
+            const into = recurser(n.into);
+            const setS = mapr(generator)(n.set);
+            var str = [`UPDATE ${into} SET ${setS}`];
+            
+            if (n.where) {
+                const whereNode = head(n.where);
+                const where = recurser(whereNode);
+                str.push(`${INDENT}WHERE ${where}${LINE_END}`);
+            }
+            if (n.limit) {
+                const limit = recurser(n.limit);
+                str.push(`${INDENT}${limit}`);
+            }
+            
+            return str.join('');
         }
     },
     compound : {
@@ -207,8 +240,10 @@ const generator = {
                 const alias = (n.alias) ? `AS [${n.alias}]` : '';
                 return `${operator} ${expression} ${alias}`;
             }
-            const left = recurser(n.left);
-            const right = recurser(n.right);
+            const leftOp = recurser(n.left);
+            const left = containsSelect(leftOp)? `(${leftOp})` : leftOp;
+            const rightOp = recurser(n.right);
+            const right = containsSelect(rightOp)? `(${rightOp})` : rightOp;
             return `(${left} ${n.operation} ${right})`;
         },
         list : (n) => {
