@@ -20,7 +20,7 @@ const returnNewLine = join('\n');
 const joinList = join(', ');
 const terminateStatements = map(concat(__, ';'));
 const containsSelect = (s) => (s.indexOf('SELECT') !== -1);
-const isCreateOfType = (n) => compose(equals(n), prop('format'));
+const isOfFormat = (n) => compose(equals(n), prop('format'));
 
 const generator = {
     statement : {
@@ -79,9 +79,9 @@ const generator = {
         },
         create : (n) => {
             const recurser = recurse(generator);
-            const isCreateIndex = isCreateOfType('index');
-            const isCreateTable = isCreateOfType('table');
-            const isCreateView = isCreateOfType('view');
+            const isCreateIndex = isOfFormat('index');
+            const isCreateTable = isOfFormat('table');
+            const isCreateView = isOfFormat('view');
             
             if(isCreateView(n)){
                 const viewName = recurser(n.target);
@@ -194,7 +194,7 @@ const generator = {
     expression : {
         operation : (n) => {
             const recurser = recurse(generator);
-            const isUnaryOperation = isCreateOfType('unary');
+            const isUnaryOperation = isOfFormat('unary');
             if(isUnaryOperation(n)){
                 const expression = recurser(n.expression);
                 const operator = (n.operator) ? `${n.operator}` : '';
@@ -279,11 +279,11 @@ const generator = {
             
             // Its a select subquery
             if (containsSelect(source)){
-                const subquery = `(${source}) AS ${sourceAlias}${LINE_END}${join}`;
+                const subquery = `(${source}) AS ${sourceAlias} ${join}`;
                 return subquery;
             }
             // Its an inner join.
-            return `${source}${LINE_END}${join}`;
+            return `${source} ${join}`;
         }
     },
     join : {
@@ -305,12 +305,28 @@ const generator = {
             const source = recurser(n.source);
             const constraint = recurser(n.constraint);
             return `${INDENT}LEFT OUTER JOIN ${source}${LINE_END}${constraint}`;
+        },
+        'cross join' : (n) => {
+            const recurser = recurse(generator);
+            const source = recurser(n.source);
+            return `, ${source}`;
         }
     },
     constraint : {
         join : (n) => {
-            const on = recurse(generator)(n.on);
-            return `${INDENT}ON ${on}${LINE_END}`;
+            const isFormatUsing = isOfFormat('using');
+            const isFormatOn = isOfFormat('on');
+            
+            const recurser = recurse(generator);
+            if(isFormatOn(n)){
+                const on = recurser(n.on);
+                return `${INDENT}ON ${on}${LINE_END}`;
+            }
+            if(isFormatUsing(n)){
+                const using = mapr(generator)(n.using.columns);
+                return `${INDENT}USING (${using})${LINE_END}`;
+            }
+            return '';
         },
         'primary key' : () => `PRIMARY KEY`,
         'not null': () => `NOT NULL`,
