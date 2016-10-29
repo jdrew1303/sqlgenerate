@@ -2,7 +2,7 @@
 
 // Needed to allow its use in older versions of Node and Browsers.
 import 'babel-polyfill';
-import {map, join, head, compose, curry, toUpper, prop, equals, isEmpty, F, isArrayLike, concat, __} from 'ramda';
+import {map, join, head, compose, curry, toUpper, prop, equals, isEmpty, F, isArrayLike, concat, __, pluck, contains} from 'ramda';
 import {} from 'underscore.string.fp';
 
 const INDENT = '\t';
@@ -37,7 +37,9 @@ const generator = {
             var str = [''];
             if (n.with) {
                 const withS = recourseList(n.with);
-                str.push(`${withS}${LINE_END}`);
+                const isRecursive = (n) => isArrayLike(n) ? compose(contains('recursive'), pluck('variant'))(n) : F;
+                const w = isRecursive(n.with) ? 'WITH RECURSIVE' : 'WITH';
+                str.push(`${w} ${withS}${LINE_END}`);
             }
             str.push('SELECT ');
             if (n.result) {
@@ -230,7 +232,7 @@ const generator = {
             const recurser = recurse(generator);
             const expression = recurser(n.expression);
             const target = recurser(n.target);
-            return `WITH ${target} AS (${expression})`;
+            return `${target} AS (${expression})`;
         },
         'case' : (n) => {
             // This is a hack until the ast is standardised. 
@@ -240,6 +242,12 @@ const generator = {
             const conditions = mapConditions(n.condition);
             const alias = (n.alias) ? `AS [${n.alias}]` : '';
             return `CASE ${conditions} END ${alias}`;
+        },
+        recursive : (n) => {
+            const recurser = recurse(generator);
+            const target = recurser(n.target);
+            const expression = recurser(n.expression);
+            return `${target} AS (${expression})`;
         }
     },
     condition : {
