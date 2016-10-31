@@ -31,7 +31,7 @@
     "jshint": "^2.5.6",
     "lodash": "^4.16.4",
     "mocha": "^2.1.0",
-    "sqlite-parser": "^1.0.0-rc1"
+    "sqlite-parser": "^1.0.0-rc2"
   },
   "dependencies": {
     "babel-polyfill": "^6.16.0",
