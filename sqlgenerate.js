@@ -15,6 +15,8 @@ const recurse = curry((generator, n) => {
     switch (n.type) {
         case 'function':
             return generator['function'](n);
+        case 'module':
+            return generator.module(n);
         case 'assignment':
             return generator.assignment(n);
         default:
@@ -97,6 +99,13 @@ const generator = {
             const isCreateIndex = isOfFormat('index');
             const isCreateTable = isOfFormat('table');
             const isCreateView = isOfFormat('view');
+            const isCreateVirtual = isOfFormat('virtual');
+            
+            if(isCreateVirtual(n)){
+                const target = recurser(n.target);
+                const result = recurser(n.result);
+                return `CREATE VIRTUAL TABLE ${target} USING ${result}`;
+            }
             
             if(isCreateView(n)){
                 const viewName = recurser(n.target);
@@ -349,6 +358,12 @@ const generator = {
         const alias =  (n.alias)  ? `AS \`${n.alias}\`` : '';
         return `${name}(${args}) ${alias}`;
     },  
+    module : (n) => {
+        const recurser = recurse(generator);
+        const args = recurser(n.args);
+        const alias =  (n.alias)  ? `AS \`${n.alias}\`` : '';
+        return `${n.name}(${args}) ${alias}`;
+    }, 
     map : {
         join : (n) => {
             const recurser = recurse(generator);
