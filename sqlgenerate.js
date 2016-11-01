@@ -238,7 +238,7 @@ const generator = {
         index : (n) => `INDEXED BY ${n.name}`,
         column : (n) => {
             const recurser = recurse(generator);
-            const alias =  (n.alias) ? `AS [${n.alias}]` : '';
+            const alias =  (n.alias) ? `AS \`${n.alias}\`` : '';
             const index = (n.index) ? recurser(n.index) : '';
             return `\`${n.name}\` ${alias} ${index}`;
         },
