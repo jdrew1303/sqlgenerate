@@ -35,8 +35,8 @@
   },
   "dependencies": {
     "babel-polyfill": "^6.16.0",
-    "sqltraverse": "git+https://github.com/jdrew1303/sqltraverse.git",
     "ramda": "^0.22.1",
+    "sqltraverse": "git+https://github.com/jdrew1303/sqltraverse.git",
     "underscore.string.fp": "^1.0.4"
   },
   "license": "BSD-2-Clause",

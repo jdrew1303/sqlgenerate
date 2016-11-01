@@ -1,5 +1,5 @@
 import { expect }   from 'chai';
-import {generate}   from '..';
+import { generate } from '..';
 import { readFile } from 'fs';
 import parser       from 'sqlite-parser';
 import glob         from 'glob';
@@ -7,10 +7,10 @@ import * as _       from 'lodash';
 
 describe('test suite', () => {
     // get all sql files in our test suite
-    let files = glob.sync('test/sql/**/*.sql');
+    const files = glob.sync('test/sql/**/*.sql');
     
     // extract information from the filepath names
-    let tests = _.groupBy(_.map(files, (file) => {
+    const tests = _.groupBy(_.map(files, (file) => {
         let r = /^test\/sql\/([\s\S]*)\/([\s\S]*)\.sql/gi.exec(file);
         return {
             filePath : file,
@@ -32,13 +32,16 @@ describe('test suite', () => {
                     readFile(test.filePath, (err, data) => {
                         if (err) throw "Unable to read file";
                         
-                        var sql = data.toString();
-                        var ast = parser(sql);
+                        const sql = data.toString();
                         
-                        var regeneratedSQL = generate(ast);
+                        const ast = parser(sql);
+                        
+                        const regeneratedSQL = generate(ast);
                         console.log(regeneratedSQL);
-                        var isParsible = parser(regeneratedSQL)
                         
+                        
+                        const isParsible = parser(regeneratedSQL);
+                       
                         expect(isParsible).to.deep.equal(ast);
                         expect(standardiseString(regeneratedSQL)).to.equal(standardiseString(sql));
                         done();

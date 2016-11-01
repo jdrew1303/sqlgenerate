@@ -258,17 +258,26 @@ const generator = {
         operation : (n) => {
             const recurser = recurse(generator);
             const isUnaryOperation = isOfFormat('unary');
+            
             if(isUnaryOperation(n)){
                 const expression = recurser(n.expression);
                 const operator = (n.operator) ? `${n.operator}` : '';
                 const alias = (n.alias) ? `AS [${n.alias}]` : '';
                 return `${operator} ${expression} ${alias}`;
             }
-            const leftOp = recurser(n.left);
-            const left = containsSelect(leftOp)? `(${leftOp})` : leftOp;
-            const rightOp = recurser(n.right);
-            const right = containsSelect(rightOp)? `(${rightOp})` : rightOp;
-            return `(${left} ${n.operation} ${right})`;
+            
+            
+            const isBetween = (n) => (n.operation === 'between');
+            const isExpression = (n) => (n.type === 'expression');
+            
+            const side = (s) => {
+                const sideOp = recurser(n[s]);
+                return !isBetween(n) && (isExpression(n[s]) || containsSelect(sideOp)) ? `(${sideOp})` : sideOp;
+            };
+            const left = side('left');
+            const right = side('right');
+            
+            return `${left} ${n.operation} ${right}`;
         },
         list : (n) => {
             const argsList = compose(joinList, mapr(generator));
@@ -395,7 +404,7 @@ const generator = {
         unique : () => `UNIQUE`,
         check : (n) => {
             const check = recurse(generator)(n.expression);
-            return `CHECK ${check}`;
+            return `CHECK (${check})`;
         },
         'foreign key' : (n) => {
             const recurser = recurse(generator);
