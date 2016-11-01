@@ -167,8 +167,9 @@ const generator = {
         },
         drop : (n) => {
             const recurser = recurse(generator);
+            const condition = (n.condition.length > 0) ? mapr(generator)(n.condition) : '';
             const target = recurser(n.target);
-            return `DROP ${n.format} ${target}`;
+            return `DROP ${n.format} ${condition} ${target}`;
         },
         update : (n) => {
             const recurser = recurse(generator);
@@ -247,7 +248,8 @@ const generator = {
             return `\`${n.name}\`(${m(n.columns)})`;
         },
         view : (n) => n.name,
-        savepoint : (n) => n.name
+        savepoint : (n) => n.name,
+        trigger : (n) => `"${n.name}"`
     },
     literal : {
         text : (n) => `'${n.value}'`,
@@ -319,7 +321,8 @@ const generator = {
             const target = recurser(n.target);
             const expression = recurser(n.expression);
             return `${target} AS (${expression})`;
-        }
+        },
+        exists : (n) => n.operator
     },
     condition : {
         when : (n) => {
@@ -332,6 +335,11 @@ const generator = {
             const recurser = recurse(generator);
             const elseS = recurser(n.consequent);
             return `ELSE ${elseS}`;
+        },
+        'if' : (n) => {
+            const recurser = recurse(generator);
+            const exists = recurser(n.condition);
+            return `IF ${exists}`;
         }
     },
     'function' : (n) => {

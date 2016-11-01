@@ -35,6 +35,7 @@ describe('test suite', () => {
                         const sql = data.toString();
                         const ast = parser(sql);
                         const regeneratedSQL = generate(ast);
+                        console.log(regeneratedSQL);
                         const isParsible = parser(regeneratedSQL);
                        
                         expect(isParsible).to.deep.equal(ast);
