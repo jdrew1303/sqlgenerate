@@ -33,13 +33,8 @@ describe('test suite', () => {
                         if (err) throw "Unable to read file";
                         
                         const sql = data.toString();
-                        
                         const ast = parser(sql);
-                        
                         const regeneratedSQL = generate(ast);
-                        console.log(regeneratedSQL);
-                        
-                        
                         const isParsible = parser(regeneratedSQL);
                        
                         expect(isParsible).to.deep.equal(ast);
