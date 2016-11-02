@@ -107,13 +107,14 @@ var Generator = {
             if(isCreateTrigger(n)){
                 const m = mapr(Generator);
                 const target = recurser(n.target);
+                const by = n.by ? `FOR EACH ${n.by}` : '';
                 const event = recurser(n.event);
                 const on = recurser(n.on);
-                const action = m(n.action);
+                const action = compose(join(';\n'), m)(n.action);
                 const when = recurser(n.when);
                 const temporary = (!!n.temporary) ? 'TEMPORARY' : '';
                 const condition = (n.condition) ? m(n.condition) : '';
-                return `CREATE ${temporary} TRIGGER ${condition} ${target} ${event} ON ${on} WHEN ${when} BEGIN ${action}; END`;
+                return `CREATE ${temporary} TRIGGER ${condition} ${target} ${event} ON ${on} ${by} WHEN ${when} BEGIN ${action}; END`;
             }
             
             if(isCreateVirtual(n)){
