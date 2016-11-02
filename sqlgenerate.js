@@ -10,13 +10,12 @@ const LINE_END = '\n';
 
 function visit(ast) {
     if (is(String, ast)) { return ast; }
+    if (is(Array, ast)){ return map(visit, ast); }
     const hasNoVariant = contains(__, ['function', 'module', 'assignment', 'event']);
     const g = hasNoVariant(ast.type) ? Generator[ast.type] : Generator[ast.type][ast.variant];
     if (g == null) {throw Error('Unsupported type: ' + ast.type);}
     return g(ast);
 }
-
-const visitList = map(visit);
 
 const datatype = (n) => n.variant;
 const returnNewLine = join('\n');
@@ -24,7 +23,7 @@ const joinList = join(', ');
 const terminateStatements = map(concat(__, ';'));
 const containsSelect = (s) => (s.indexOf('SELECT') !== -1);
 const isOfFormat = (n) => compose(equals(n), prop('format'));
-const argsList = compose(joinList, visitList);
+const argsList = compose(joinList, visit);
 const datatypeWithArgs = (n) => `${n.variant}(${visit(n.args)})`;
 
 
@@ -36,13 +35,13 @@ var Generator = {
     },
     statement : {
         list : (n) => {
-            const statements = compose(returnNewLine, terminateStatements, visitList);
+            const statements = compose(returnNewLine, terminateStatements, visit);
             return statements(n.statement);
         },
         select : (n) => {
             var str = [''];
             if (n.with) {
-                const withS = visitList(n.with);
+                const withS = visit(n.with);
                 const isRecursive = (n) => isArrayLike(n) ? compose(contains('recursive'), pluck('variant'))(n) : F;
                 const w = isRecursive(n.with) ? 'WITH RECURSIVE' : 'WITH';
                 str.push(`${w} ${withS}${LINE_END}`);
@@ -80,7 +79,7 @@ var Generator = {
         },
         compound : (n) => {
             const statement = visit(n.statement);
-            const compound = visitList(n.compound);
+            const compound = visit(n.compound);
             return `${statement}${compound}`;
         },
         create : (n) => {
@@ -95,10 +94,10 @@ var Generator = {
                 const by = n.by ? `FOR EACH ${n.by}` : '';
                 const event = visit(n.event);
                 const on = visit(n.on);
-                const action = compose(join(';\n'), visitList)(n.action);
+                const action = compose(join(';\n'), visit)(n.action);
                 const when = visit(n.when);
                 const temporary = (!!n.temporary) ? 'TEMPORARY' : '';
-                const condition = (n.condition) ? visitList(n.condition) : '';
+                const condition = (n.condition) ? visit(n.condition) : '';
                 return `CREATE ${temporary} TRIGGER ${condition} ${target} ${event} ON ${on} ${by} WHEN ${when} BEGIN ${action}; END`;
             }
             
@@ -123,7 +122,7 @@ var Generator = {
             
             if (isCreateTable(n)) {
                 const tableName = visit(n.name);
-                const definitionsList = compose(join(`,${LINE_END}`), visitList);
+                const definitionsList = compose(join(`,${LINE_END}`), visit);
                 const definitions = definitionsList(n.definition);
                 
                 // Can probable be refactored to be a bit more elegant... :/ 
@@ -149,7 +148,7 @@ var Generator = {
             }
             // Otherwise we build up the values to be inserted
             const addBrackets = map((s) => `(${s})`);
-            const valuesList = compose(join(`,${LINE_END}`), addBrackets, visitList);
+            const valuesList = compose(join(`,${LINE_END}`), addBrackets, visit);
             const result = valuesList(n.result);
             return `INSERT INTO ${into}${LINE_END}VALUES ${result}`;
         },
@@ -172,13 +171,13 @@ var Generator = {
             return str.join('');
         },
         drop : (n) => {
-            const condition = (n.condition.length > 0) ? visitList(n.condition) : '';
+            const condition = (n.condition.length > 0) ? visit(n.condition) : '';
             const target = visit(n.target);
             return `DROP ${n.format} ${condition} ${target}`;
         },
         update : (n) => {
             const into = visit(n.into);
-            const setS = visitList(n.set);
+            const setS = visit(n.set);
             var str = [`UPDATE ${into} SET ${setS}`];
             
             if (n.where) {
@@ -245,7 +244,7 @@ var Generator = {
         },
         'function' : (n) => n.name,
         expression : (n) => {
-            const m = visitList;
+            const m = visit;
             return `\`${n.name}\`(${m(n.columns)})`;
         },
         view : (n) => n.name,
@@ -281,7 +280,7 @@ var Generator = {
             return `${left} ${n.operation} ${right}`;
         },
         list : (n) => {
-            const argsList = compose(joinList, visitList);
+            const argsList = compose(joinList, visit);
             return argsList(n.expression);
         },
         order : (n) => {
@@ -306,7 +305,7 @@ var Generator = {
             return `${target} AS (${expression})`;
         },
         'case' : (n) => {
-            const mapConditions = compose(join(LINE_END), visitList);
+            const mapConditions = compose(join(LINE_END), visit);
             const conditions = mapConditions(n.expression);
             const alias = (n.alias) ? `AS [${n.alias}]` : '';
             return `CASE ${conditions} END ${alias}`;
@@ -345,7 +344,7 @@ var Generator = {
         return `${n.name}(${args}) ${alias}`;
     }, 
     event : ({event, occurs, of}) => {
-        const processedOf = (of) ? `OF ${visitList(of)}` : '';
+        const processedOf = (of) ? `OF ${visit(of)}` : '';
         return `${occurs} ${event} ${processedOf}`;
     },
     map : {
@@ -394,7 +393,7 @@ var Generator = {
                 return `${INDENT}ON ${on}${LINE_END}`;
             }
             if(isFormatUsing(n)){
-                const using = visitList(n.using.columns);
+                const using = visit(n.using.columns);
                 return `${INDENT}USING (${using})${LINE_END}`;
             }
             return '';
@@ -414,7 +413,7 @@ var Generator = {
     },
     definition : {
         column : (n) => {
-            const datatype = isArrayLike(n.datatype) ? visitList(Generator, n.datatype) : visit(n.datatype);
+            const datatype = visit(n.datatype);
             const constraintsList = compose(join(' '), map(visit));
             const constraints = constraintsList(n.definition);
             return `${n.name} ${datatype} ${constraints}`;
