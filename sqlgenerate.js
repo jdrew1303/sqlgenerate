@@ -25,6 +25,8 @@ const terminateStatements = map(concat(__, ';'));
 const containsSelect = (s) => (s.indexOf('SELECT') !== -1);
 const isOfFormat = (n) => compose(equals(n), prop('format'));
 const argsList = compose(joinList, visitList);
+const datatypeWithArgs = (n) => `${n.variant}(${visit(n.args)})`;
+
 
 var Generator = {
     assignment : (n) => {
@@ -441,10 +443,7 @@ var Generator = {
     },
     datatype : {
         int : datatype,
-        varchar : (n) => {
-            const arg = visit(n.args);
-            return `${n.variant}(${arg})`;
-        },
+        varchar : datatypeWithArgs,
         blob : datatype,
         double : datatype,
         int8 : datatype,
@@ -460,29 +459,17 @@ var Generator = {
         datetime : datatype,
         date : datatype,
         boolean : datatype,
-        decimal : (n) => {
-            const arg = visit(n.args);
-            return `${n.variant}(${arg})`;
-        },
+        decimal : datatypeWithArgs,
         numeric : datatype,
         real : datatype,
         float : datatype,
         'double precision' : datatype,
-        clob : (n) => {
-            const arg = visit(n.args);
-            return `${n.variant}(${arg})`;
-        },
+        clob : datatypeWithArgs,
         longtext : datatype,
         mediumtext : datatype,
         tinytext : datatype,
-        char : (n) => {
-            const arg = visit(n.args);
-            return `${n.variant}(${arg})`;
-        },
-        nvarchar : (n) => {
-            const arg = visit(n.args);
-            return `${n.variant}(${arg})`;
-        }
+        char : datatypeWithArgs,
+        nvarchar : datatypeWithArgs
     }
 };
 
