@@ -26,7 +26,7 @@ const terminateStatements = map(concat(__, ';'));
 
 const argsList = compose(joinCommaSeperated, visit);
 
-const containsSelect = contains('SELECT');
+const containsSelect = contains('select');
 const isOfFormat = (n) => compose(equals(n), prop('format'));
 
 const compound = (n) => `${toUpper(n.variant)}${visit(n.statement)}`;
@@ -48,33 +48,33 @@ var Generator = {
             if (n.with) {
                 const withS = visit(n.with);
                 const isRecursive = (n) => isArrayLike(n) ? compose(contains('recursive'), pluck('variant'))(n) : F;
-                const w = isRecursive(n.with) ? 'WITH RECURSIVE' : 'WITH';
+                const w = isRecursive(n.with) ? 'with recursive' : 'with';
                 str.push(`${w} ${withS}`);
             }
-            str.push('SELECT ');
+            str.push('select ');
             if (n.result) {
                 const results = argsList(n.result);
                 str.push(`${results}`);
             }
             if (n.from) {
                 const from = visit(n.from);
-                str.push(`FROM (${from})`);
+                str.push(`from (${from})`);
             }
             if (n.where) {
                 const where = visit(head(n.where));
-                str.push(`WHERE ${where}`);
+                str.push(`where ${where}`);
             }
             if (n.group) {
                 const group = visit(n.group);
-                str.push(`GROUP BY ${group}`);
+                str.push(`group by ${group}`);
             }
             if (n.having) {
                 const having = visit(n.having);
-                str.push(`HAVING ${having}`);
+                str.push(`having ${having}`);
             }
             if (n.order) {
                 const order = visit(head(n.order));
-                str.push(`ORDER BY ${order}`);
+                str.push(`order by ${order}`);
             }
             if (n.limit) {
                 const limit = visit(n.limit);
@@ -96,33 +96,33 @@ var Generator = {
             
             if(isCreateTrigger(n)){
                 const target = visit(n.target);
-                const by = n.by ? `FOR EACH ${n.by}` : '';
+                const by = n.by ? `for each ${n.by}` : '';
                 const event = visit(n.event);
                 const on = visit(n.on);
                 const action = compose(joinTerminal, visit)(n.action);
                 const when = visit(n.when);
-                const temporary = (!!n.temporary) ? 'TEMPORARY' : '';
+                const temporary = (!!n.temporary) ? 'temporary' : '';
                 const condition = (n.condition) ? visit(n.condition) : '';
-                return `CREATE ${temporary} TRIGGER ${condition} ${target} ${event} ON ${on} ${by} WHEN ${when} BEGIN ${action}; END`;
+                return `create ${temporary} trigger ${condition} ${target} ${event} on ${on} ${by} when ${when} begin ${action}; end`;
             }
             
             if(isCreateVirtual(n)){
                 const target = visit(n.target);
                 const result = visit(n.result);
-                return `CREATE VIRTUAL TABLE ${target} USING ${result}`;
+                return `create virtual table ${target} using ${result}`;
             }
             
             if(isCreateView(n)){
                 const viewName = visit(n.target);
                 const result = visit(n.result);
-                return `CREATE VIEW ${viewName} AS ${result}`;
+                return `create view ${viewName} as ${result}`;
             }
             
             if (isCreateIndex(n)) {
                 const indexName = n.target.name;
                 const onColumns = visit(n.on);
                 const where = visit(head(n.where));
-                return `CREATE INDEX ${indexName} ON ${onColumns}WHERE ${where}`;
+                return `create index ${indexName} on ${onColumns} where ${where}`;
             }
             
             if (isCreateTable(n)) {
@@ -131,8 +131,8 @@ var Generator = {
                 const definitions = definitionsList(n.definition);
                 
                 // Can probable be refactored to be a bit more elegant... :/ 
-                const defaultCreateSyntax = `CREATE TABLE ${tableName} (${definitions})`;
-                const createTableFromSelect = `CREATE TABLE ${tableName} AS ${definitions}`;
+                const defaultCreateSyntax = `create table ${tableName} (${definitions})`;
+                const createTableFromSelect = `create table ${tableName} as ${definitions}`;
                 
                 return containsSelect(definitions) ? createTableFromSelect 
                                                    : defaultCreateSyntax;
@@ -144,30 +144,30 @@ var Generator = {
             
             // This is an insert into default values
             if (n.result.variant === 'default'){ 
-                return `INSERT INTO ${into} DEFAULT VALUES`;
+                return `insert into ${into} default values`;
             }
             // This is an insert into select
             if (n.result.variant === 'select'){ 
                 const result = visit(n.result);
-                return `INSERT INTO ${into}${result}`;
+                return `insert into ${into}${result}`;
             }
             // Otherwise we build up the values to be inserted
             const addBrackets = map((s) => `(${s})`);
             const valuesList = compose(joinCommaSeperated, addBrackets, visit);
             const result = valuesList(n.result);
-            return `INSERT INTO ${into} VALUES ${result}`;
+            return `insert into ${into} values ${result}`;
         },
         'delete' : (n) => {
-            var str = ['DELETE '];
+            var str = ['delete '];
             
             if (n.from) {
                 const from = visit(n.from);
-                str.push(`FROM ${from}`);
+                str.push(`from ${from}`);
             }
             if (n.where) {
                 const whereNode = head(n.where);
                 const where = visit(whereNode);
-                str.push(`WHERE ${where}`);
+                str.push(`where ${where}`);
             }
             if (n.limit) {
                 const limit = visit(n.limit);
@@ -178,17 +178,17 @@ var Generator = {
         drop : (n) => {
             const condition = (n.condition.length > 0) ? visit(n.condition) : '';
             const target = visit(n.target);
-            return `DROP ${n.format} ${condition} ${target}`;
+            return `drop ${n.format} ${condition} ${target}`;
         },
         update : (n) => {
             const into = visit(n.into);
             const setS = visit(n.set);
-            var str = [`UPDATE ${into} SET ${setS}`];
+            var str = [`update ${into} set ${setS}`];
             
             if (n.where) {
                 const whereNode = head(n.where);
                 const where = visit(whereNode);
-                str.push(`WHERE ${where}`);
+                str.push(`where ${where}`);
             }
             if (n.limit) {
                 const limit = visit(n.limit);
@@ -203,15 +203,15 @@ var Generator = {
             const isRollback = isOfActionType('rollback');
             
             if (isBegin(n.action)){
-                return `${n.action} ${n.defer} TRANSACTION`;
+                return `${n.action} ${n.defer} transaction`;
             }
             if (isRollback(n.action)){
-                return `ROLLBACK TRANSACTION TO SAVEPOINT ${n.savepoint.name}`;
+                return `rollback transaction to savepoint ${n.savepoint.name}`;
             }
-            return `COMMIT`;
+            return `commit`;
         },
-        release : (n) => `RELEASE SAVEPOINT ${visit(n.target.savepoint)}`,
-        savepoint : (n) => `SAVEPOINT ${visit(n.target.savepoint)}`
+        release : (n) => `release savepoint ${visit(n.target.savepoint)}`,
+        savepoint : (n) => `savepoint ${visit(n.target.savepoint)}`
     },
     compound : {
         union : compound,
@@ -222,13 +222,13 @@ var Generator = {
     identifier : {
         star : (n) => n.name,
         table : (n) => {
-            const alias =  (n.alias)  ? `AS ${n.alias}` : '';
+            const alias =  (n.alias)  ? `as ${n.alias}` : '';
             const index = (n.index) ? visit(n.index) : '';
             return `\`${n.name}\` ${alias} ${index}`;
         },
-        index : (n) => `INDEXED BY ${n.name}`,
+        index : (n) => `indexed by ${n.name}`,
         column : (n) => {
-            const alias =  (n.alias) ? `AS \`${n.alias}\`` : '';
+            const alias =  (n.alias) ? `as \`${n.alias}\`` : '';
             const index = (n.index) ? visit(n.index) : '';
             return `\`${n.name}\` ${alias} ${index}`;
         },
@@ -241,7 +241,7 @@ var Generator = {
     literal : {
         text : (n) => `'${n.value}'`,
         decimal : (n) => n.value,
-        null : () => 'NULL'
+        null : () => 'null'
     },
     expression : {
         operation : (n) => {
@@ -250,7 +250,7 @@ var Generator = {
             if(isUnaryOperation(n)){
                 const expression = visit(n.expression);
                 const operator = (n.operator) ? `${n.operator}` : '';
-                const alias = (n.alias) ? `AS [${n.alias}]` : '';
+                const alias = (n.alias) ? `as [${n.alias}]` : '';
                 return `${operator} ${expression} ${alias}`;
             }
             
@@ -283,23 +283,23 @@ var Generator = {
         cast : (n) => {
             const expression = visit(n.expression);
             const as = visit(n.as);
-            const alias = (n.alias) ? `AS [${n.alias}]` : '';
-            return `CAST(${expression} AS ${as})${alias}`;
+            const alias = (n.alias) ? `as [${n.alias}]` : '';
+            return `CAST(${expression} as ${as})${alias}`;
         },
         common : (n) => {
             const expression = visit(n.expression);
             const target = visit(n.target);
-            return `${target} AS (${expression})`;
+            return `${target} as (${expression})`;
         },
         'case' : (n) => {
             const conditions = joinSpace(visit(n.expression));
-            const alias = (n.alias) ? `AS [${n.alias}]` : '';
-            return `CASE ${conditions} END ${alias}`;
+            const alias = (n.alias) ? `as [${n.alias}]` : '';
+            return `case ${conditions} end ${alias}`;
         },
         recursive : (n) => {
             const target = visit(n.target);
             const expression = visit(n.expression);
-            return `${target} AS (${expression})`;
+            return `${target} as (${expression})`;
         },
         exists : (n) => n.operator
     },
@@ -307,30 +307,30 @@ var Generator = {
         when : (n) => {
             const when = visit(n.condition);
             const then = visit(n.consequent);
-            return `WHEN ${when} THEN ${then}`;
+            return `when ${when} then ${then}`;
         },
         'else' : (n) => {
             const elseS = visit(n.consequent);
-            return `ELSE ${elseS}`;
+            return `else ${elseS}`;
         },
         'if' : (n) => {
             const exists = visit(n.condition);
-            return `IF ${exists}`;
+            return `if ${exists}`;
         }
     },
     'function' : (n) => {
         const name = toUpper(visit(n.name));
         const args = visit(n.args);
-        const alias =  (n.alias)  ? `AS \`${n.alias}\`` : '';
+        const alias =  (n.alias)  ? `as \`${n.alias}\`` : '';
         return `${name}(${args}) ${alias}`;
     },  
     module : (n) => {
         const args = visit(n.args);
-        const alias =  (n.alias)  ? `AS \`${n.alias}\`` : '';
+        const alias =  (n.alias)  ? `as \`${n.alias}\`` : '';
         return `${n.name}(${args}) ${alias}`;
     }, 
     event : ({event, occurs, of}) => {
-        const processedOf = (of) ? `OF ${visit(of)}` : '';
+        const processedOf = (of) ? `of ${visit(of)}` : '';
         return `${occurs} ${event} ${processedOf}`;
     },
     map : {
@@ -341,7 +341,7 @@ var Generator = {
             
             // Its a select subquery
             if (containsSelect(source)){
-                const subquery = `(${source}) AS ${sourceAlias} ${join}`;
+                const subquery = `(${source}) as ${sourceAlias} ${join}`;
                 return subquery;
             }
             // Its an inner join.
@@ -352,18 +352,18 @@ var Generator = {
         join : (n) => {
             const source = visit(n.source);
             const constraint = visit(n.constraint);
-            return `JOIN ${source}${constraint}`;
+            return `join ${source}${constraint}`;
         },
         'inner join' : (n) => {
             const source = visit(n.source);
-            const sourceAlias = (n.source.alias)? ` AS ${n.source.alias}` : '';
+            const sourceAlias = (n.source.alias)? ` as ${n.source.alias}` : '';
             const constraint = visit(n.constraint);
-            return `INNER JOIN (${source})${sourceAlias} ${constraint}`;
+            return `inner join (${source})${sourceAlias} ${constraint}`;
         },
         'left outer join' : (n) => {
             const source = visit(n.source);
             const constraint = visit(n.constraint);
-            return `LEFT OUTER JOIN ${source}${constraint}`;
+            return `left outer join ${source}${constraint}`;
         },
         'cross join' : (n) => {
             const source = visit(n.source);
@@ -376,26 +376,26 @@ var Generator = {
             const isFormatOn = isOfFormat('on');
             if(isFormatOn(n)){
                 const on = visit(n.on);
-                return `ON ${on}`;
+                return `on ${on}`;
             }
             if(isFormatUsing(n)){
                 const using = visit(n.using.columns);
-                return `USING (${using})`;
+                return `using (${using})`;
             }
             return '';
         },
-        'primary key' : () => `PRIMARY KEY`,
-        'not null': () => `NOT NULL`,
-        unique : () => `UNIQUE`,
+        'primary key' : () => 'primary key',
+        'not null': () => 'not null',
+        unique : () => 'unique',
         check : (n) => {
             const check = visit(n.expression);
-            return `CHECK (${check})`;
+            return `check (${check})`;
         },
         'foreign key' : (n) => {
             const ref = visit(n.references);
-            return `REFERENCES ${ref}`;
+            return `references ${ref}`;
         },
-        'null' : () => 'NULL'
+        'null' : () => 'null'
     },
     definition : {
         column : (n) => {
@@ -416,12 +416,12 @@ var Generator = {
             if(isForeignKey(n.definition)){
                 const childKey = visit(head(n.columns));
                 const parentKey = visit(head(n.definition));
-                return `FOREIGN KEY (${childKey}) ${parentKey}`;
+                return `foreign key (${childKey}) ${parentKey}`;
             }
             if(isPrimaryKey(n.definition)){
                 const childKey = visit(head(n.columns));
                 const conflict = prop('conflict', head(n.definition));
-                return `PRIMARY KEY (${childKey}) ON CONFLICT ${conflict}`;
+                return `primary key (${childKey}) on conflict ${conflict}`;
             }
             return visit(head(n.definition));
         }
