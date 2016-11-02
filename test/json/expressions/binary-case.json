@@ -1,0 +1,83 @@
+{
+  "type": "statement",
+  "variant": "list",
+  "statement": [
+    {
+      "type": "statement",
+      "variant": "select",
+      "result": [
+        {
+          "type": "expression",
+          "variant": "case",
+          "expression": [
+            {
+              "type": "condition",
+              "variant": "when",
+              "condition": {
+                "type": "expression",
+                "format": "binary",
+                "variant": "operation",
+                "operation": "=",
+                "left": {
+                  "type": "identifier",
+                  "variant": "column",
+                  "name": "bee"
+                },
+                "right": {
+                  "type": "literal",
+                  "variant": "text",
+                  "value": "red"
+                }
+              },
+              "consequent": {
+                "type": "literal",
+                "variant": "text",
+                "value": "ANGRY"
+              }
+            },
+            {
+              "type": "condition",
+              "variant": "when",
+              "condition": {
+                "type": "expression",
+                "format": "binary",
+                "variant": "operation",
+                "operation": "=",
+                "left": {
+                  "type": "identifier",
+                  "variant": "column",
+                  "name": "bee"
+                },
+                "right": {
+                  "type": "literal",
+                  "variant": "text",
+                  "value": "green"
+                }
+              },
+              "consequent": {
+                "type": "literal",
+                "variant": "text",
+                "value": "HAPPY"
+              }
+            },
+            {
+              "type": "condition",
+              "variant": "else",
+              "consequent": {
+                "type": "literal",
+                "variant": "text",
+                "value": "NEUTRAL"
+              }
+            }
+          ],
+          "alias": "beestate"
+        }
+      ],
+      "from": {
+        "type": "identifier",
+        "variant": "table",
+        "name": "bees"
+      }
+    }
+  ]
+}

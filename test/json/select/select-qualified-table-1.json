@@ -1,0 +1,28 @@
+{
+  "type": "statement",
+  "variant": "list",
+  "statement": [
+    {
+      "type": "statement",
+      "variant": "select",
+      "result": [
+        {
+          "type": "identifier",
+          "variant": "star",
+          "name": "*"
+        }
+      ],
+      "from": {
+        "type": "identifier",
+        "variant": "table",
+        "name": "bees",
+        "alias": "b",
+        "index": {
+          "type": "identifier",
+          "variant": "index",
+          "name": "bees_index"
+        }
+      }
+    }
+  ]
+}

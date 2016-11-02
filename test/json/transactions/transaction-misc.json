@@ -1,0 +1,39 @@
+{
+  "type": "statement",
+  "variant": "list",
+  "statement": [
+    {
+      "type": "statement",
+      "variant": "release",
+      "target": {
+        "savepoint": {
+          "type": "identifier",
+          "variant": "savepoint",
+          "name": "happy_place"
+        }
+      }
+    },
+    {
+      "type": "statement",
+      "variant": "release",
+      "target": {
+        "savepoint": {
+          "type": "identifier",
+          "variant": "savepoint",
+          "name": "sad_place"
+        }
+      }
+    },
+    {
+      "type": "statement",
+      "variant": "savepoint",
+      "target": {
+        "savepoint": {
+          "type": "identifier",
+          "variant": "savepoint",
+          "name": "bee_time"
+        }
+      }
+    }
+  ]
+}
