@@ -10,7 +10,7 @@ const LINE_END = '\n';
 
 function visit(ast) {
     if (is(String, ast)) { return ast; }
-    if (is(Array, ast)){ return map(visit, ast); }
+    if (isArrayLike(ast)){ return map(visit, ast); }
     const hasNoVariant = contains(__, ['function', 'module', 'assignment', 'event']);
     const g = hasNoVariant(ast.type) ? Generator[ast.type] : Generator[ast.type][ast.variant];
     if (g == null) {throw Error('Unsupported type: ' + ast.type);}
