@@ -5,9 +5,6 @@ import 'babel-polyfill';
 import {map, join, head, compose, toUpper, prop, equals, isEmpty, F, isArrayLike, concat, __, pluck, contains, is} from 'ramda';
 import {} from 'underscore.string.fp';
 
-const INDENT = '\t';
-const LINE_END = '\n';
-
 function visit(ast) {
     if (is(String, ast)) { return ast; }
     if (isArrayLike(ast)){ return map(visit, ast); }
@@ -18,14 +15,22 @@ function visit(ast) {
 }
 
 const datatype = (n) => n.variant;
-const returnNewLine = join('\n');
-const joinList = join(', ');
-const terminateStatements = map(concat(__, ';'));
-const containsSelect = (s) => (s.indexOf('SELECT') !== -1);
-const isOfFormat = (n) => compose(equals(n), prop('format'));
-const argsList = compose(joinList, visit);
 const datatypeWithArgs = (n) => `${n.variant}(${visit(n.args)})`;
 
+
+const joinCommaSeperated = join(', ');
+const joinSpace = join(' ');
+const joinTerminal = join(';');
+
+const terminateStatements = map(concat(__, ';'));
+
+const argsList = compose(joinCommaSeperated, visit);
+
+const containsSelect = contains('SELECT');
+const isOfFormat = (n) => compose(equals(n), prop('format'));
+
+const compound = (n) => `${toUpper(n.variant)}${visit(n.statement)}`;
+const name = (n) => `"${n.name}"`;
 
 var Generator = {
     assignment : (n) => {
@@ -35,7 +40,7 @@ var Generator = {
     },
     statement : {
         list : (n) => {
-            const statements = compose(returnNewLine, terminateStatements, visit);
+            const statements = compose(joinSpace, terminateStatements, visit);
             return statements(n.statement);
         },
         select : (n) => {
@@ -44,38 +49,38 @@ var Generator = {
                 const withS = visit(n.with);
                 const isRecursive = (n) => isArrayLike(n) ? compose(contains('recursive'), pluck('variant'))(n) : F;
                 const w = isRecursive(n.with) ? 'WITH RECURSIVE' : 'WITH';
-                str.push(`${w} ${withS}${LINE_END}`);
+                str.push(`${w} ${withS}`);
             }
             str.push('SELECT ');
             if (n.result) {
                 const results = argsList(n.result);
-                str.push(`${results}${LINE_END}`);
+                str.push(`${results}`);
             }
             if (n.from) {
                 const from = visit(n.from);
-                str.push(`${INDENT}FROM (${from})${LINE_END}`);
+                str.push(`FROM (${from})`);
             }
             if (n.where) {
                 const where = visit(head(n.where));
-                str.push(`${INDENT}WHERE ${where}${LINE_END}`);
+                str.push(`WHERE ${where}`);
             }
             if (n.group) {
                 const group = visit(n.group);
-                str.push(`${INDENT}GROUP BY ${group}${LINE_END}`);
+                str.push(`GROUP BY ${group}`);
             }
             if (n.having) {
                 const having = visit(n.having);
-                str.push(`${INDENT}HAVING ${having}${LINE_END}`);
+                str.push(`HAVING ${having}`);
             }
             if (n.order) {
                 const order = visit(head(n.order));
-                str.push(`${INDENT}ORDER BY ${order}${LINE_END}`);
+                str.push(`ORDER BY ${order}`);
             }
             if (n.limit) {
                 const limit = visit(n.limit);
-                str.push(`${INDENT}${limit}`);
+                str.push(`${limit}`);
             }
-            return str.join('');
+            return joinSpace(str);
         },
         compound : (n) => {
             const statement = visit(n.statement);
@@ -94,7 +99,7 @@ var Generator = {
                 const by = n.by ? `FOR EACH ${n.by}` : '';
                 const event = visit(n.event);
                 const on = visit(n.on);
-                const action = compose(join(';\n'), visit)(n.action);
+                const action = compose(joinTerminal, visit)(n.action);
                 const when = visit(n.when);
                 const temporary = (!!n.temporary) ? 'TEMPORARY' : '';
                 const condition = (n.condition) ? visit(n.condition) : '';
@@ -110,24 +115,24 @@ var Generator = {
             if(isCreateView(n)){
                 const viewName = visit(n.target);
                 const result = visit(n.result);
-                return `CREATE VIEW ${viewName}${LINE_END}AS ${result}`;
+                return `CREATE VIEW ${viewName} AS ${result}`;
             }
             
             if (isCreateIndex(n)) {
                 const indexName = n.target.name;
                 const onColumns = visit(n.on);
                 const where = visit(head(n.where));
-                return `CREATE INDEX ${indexName}${LINE_END}ON ${onColumns}${LINE_END}WHERE ${where}`;
+                return `CREATE INDEX ${indexName} ON ${onColumns}WHERE ${where}`;
             }
             
             if (isCreateTable(n)) {
                 const tableName = visit(n.name);
-                const definitionsList = compose(join(`,${LINE_END}`), visit);
+                const definitionsList = compose(joinCommaSeperated, visit);
                 const definitions = definitionsList(n.definition);
                 
                 // Can probable be refactored to be a bit more elegant... :/ 
-                const defaultCreateSyntax = `CREATE TABLE ${tableName} (${LINE_END}${definitions}${LINE_END})`;
-                const createTableFromSelect = `CREATE TABLE ${tableName} AS${LINE_END}${definitions}${LINE_END}`;
+                const defaultCreateSyntax = `CREATE TABLE ${tableName} (${definitions})`;
+                const createTableFromSelect = `CREATE TABLE ${tableName} AS ${definitions}`;
                 
                 return containsSelect(definitions) ? createTableFromSelect 
                                                    : defaultCreateSyntax;
@@ -139,36 +144,36 @@ var Generator = {
             
             // This is an insert into default values
             if (n.result.variant === 'default'){ 
-                return `INSERT INTO ${into}${LINE_END}DEFAULT VALUES`;
+                return `INSERT INTO ${into} DEFAULT VALUES`;
             }
             // This is an insert into select
             if (n.result.variant === 'select'){ 
                 const result = visit(n.result);
-                return `INSERT INTO ${into}${LINE_END}${result}`;
+                return `INSERT INTO ${into}${result}`;
             }
             // Otherwise we build up the values to be inserted
             const addBrackets = map((s) => `(${s})`);
-            const valuesList = compose(join(`,${LINE_END}`), addBrackets, visit);
+            const valuesList = compose(joinCommaSeperated, addBrackets, visit);
             const result = valuesList(n.result);
-            return `INSERT INTO ${into}${LINE_END}VALUES ${result}`;
+            return `INSERT INTO ${into} VALUES ${result}`;
         },
         'delete' : (n) => {
             var str = ['DELETE '];
             
             if (n.from) {
                 const from = visit(n.from);
-                str.push(`${INDENT}FROM ${from}${LINE_END}`);
+                str.push(`FROM ${from}`);
             }
             if (n.where) {
                 const whereNode = head(n.where);
                 const where = visit(whereNode);
-                str.push(`${INDENT}WHERE ${where}${LINE_END}`);
+                str.push(`WHERE ${where}`);
             }
             if (n.limit) {
                 const limit = visit(n.limit);
-                str.push(`${INDENT}${limit}`);
+                str.push(`${limit}`);
             }
-            return str.join('');
+            return joinSpace(str);
         },
         drop : (n) => {
             const condition = (n.condition.length > 0) ? visit(n.condition) : '';
@@ -183,14 +188,14 @@ var Generator = {
             if (n.where) {
                 const whereNode = head(n.where);
                 const where = visit(whereNode);
-                str.push(`${INDENT}WHERE ${where}${LINE_END}`);
+                str.push(`WHERE ${where}`);
             }
             if (n.limit) {
                 const limit = visit(n.limit);
-                str.push(`${INDENT}${limit}`);
+                str.push(`${limit}`);
             }
             
-            return str.join('');
+            return joinSpace(str);
         },
         transaction : (n) => {
             const isOfActionType = (type) => (action) => (action === type); 
@@ -205,29 +210,14 @@ var Generator = {
             }
             return `COMMIT`;
         },
-        release : (n) => {
-            const savepoint = visit(n.target.savepoint);
-            return `RELEASE SAVEPOINT ${savepoint}`;
-        },
-        savepoint : (n) => {
-            const savepoint = visit(n.target.savepoint);
-            return `SAVEPOINT ${savepoint}`;
-        }
+        release : (n) => `RELEASE SAVEPOINT ${visit(n.target.savepoint)}`,
+        savepoint : (n) => `SAVEPOINT ${visit(n.target.savepoint)}`
     },
     compound : {
-        union : (n) => {
-            const statement = visit(n.statement);
-            return `${toUpper(n.variant)}${LINE_END}${statement}`;
-        },
-        get 'union all'(){
-            return this.union;
-        },
-        get 'except'(){
-            return this.union;
-        },
-        get 'intersect'(){
-            return this.union;
-        },
+        union : compound,
+        'union all' : compound,
+        except : compound,
+        intersect : compound,
     },
     identifier : {
         star : (n) => n.name,
@@ -243,17 +233,14 @@ var Generator = {
             return `\`${n.name}\` ${alias} ${index}`;
         },
         'function' : (n) => n.name,
-        expression : (n) => {
-            const m = visit;
-            return `\`${n.name}\`(${m(n.columns)})`;
-        },
-        view : (n) => n.name,
-        savepoint : (n) => n.name,
-        trigger : (n) => `"${n.name}"`
+        expression : (n) => `"${n.name}"(${visit(n.columns)})`,
+        view : name,
+        savepoint : name,
+        trigger : name
     },
     literal : {
         text : (n) => `'${n.value}'`,
-        decimal : (n) => `${n.value}`,
+        decimal : (n) => n.value,
         null : () => 'NULL'
     },
     expression : {
@@ -280,7 +267,7 @@ var Generator = {
             return `${left} ${n.operation} ${right}`;
         },
         list : (n) => {
-            const argsList = compose(joinList, visit);
+            const argsList = compose(joinCommaSeperated, visit);
             return argsList(n.expression);
         },
         order : (n) => {
@@ -291,7 +278,7 @@ var Generator = {
         limit : (n) => {
             const limit = visit(n.start);
             const offset = visit(n.offset);
-            return `LIMIT ${limit}${LINE_END}${INDENT}OFFSET ${offset}`;
+            return `LIMIT ${limit}OFFSET ${offset}`;
         },
         cast : (n) => {
             const expression = visit(n.expression);
@@ -305,8 +292,7 @@ var Generator = {
             return `${target} AS (${expression})`;
         },
         'case' : (n) => {
-            const mapConditions = compose(join(LINE_END), visit);
-            const conditions = mapConditions(n.expression);
+            const conditions = joinSpace(visit(n.expression));
             const alias = (n.alias) ? `AS [${n.alias}]` : '';
             return `CASE ${conditions} END ${alias}`;
         },
@@ -366,18 +352,18 @@ var Generator = {
         join : (n) => {
             const source = visit(n.source);
             const constraint = visit(n.constraint);
-            return `${INDENT}JOIN ${source}${LINE_END}${constraint}`;
+            return `JOIN ${source}${constraint}`;
         },
         'inner join' : (n) => {
             const source = visit(n.source);
             const sourceAlias = (n.source.alias)? ` AS ${n.source.alias}` : '';
             const constraint = visit(n.constraint);
-            return `${INDENT}INNER JOIN (${source})${sourceAlias}${LINE_END}${constraint}`;
+            return `INNER JOIN (${source})${sourceAlias} ${constraint}`;
         },
         'left outer join' : (n) => {
             const source = visit(n.source);
             const constraint = visit(n.constraint);
-            return `${INDENT}LEFT OUTER JOIN ${source}${LINE_END}${constraint}`;
+            return `LEFT OUTER JOIN ${source}${constraint}`;
         },
         'cross join' : (n) => {
             const source = visit(n.source);
@@ -390,11 +376,11 @@ var Generator = {
             const isFormatOn = isOfFormat('on');
             if(isFormatOn(n)){
                 const on = visit(n.on);
-                return `${INDENT}ON ${on}${LINE_END}`;
+                return `ON ${on}`;
             }
             if(isFormatUsing(n)){
                 const using = visit(n.using.columns);
-                return `${INDENT}USING (${using})${LINE_END}`;
+                return `USING (${using})`;
             }
             return '';
         },
@@ -414,7 +400,7 @@ var Generator = {
     definition : {
         column : (n) => {
             const datatype = visit(n.datatype);
-            const constraintsList = compose(join(' '), map(visit));
+            const constraintsList = compose(joinSpace, map(visit));
             const constraints = constraintsList(n.definition);
             return `${n.name} ${datatype} ${constraints}`;
         },
