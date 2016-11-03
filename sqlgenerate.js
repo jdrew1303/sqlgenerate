@@ -2,7 +2,7 @@
 
 // Needed to allow its use in older versions of Node and Browsers.
 import 'babel-polyfill';
-import {map, join, head, compose, toUpper, prop, equals, isEmpty, F, isArrayLike, concat, __, pluck, contains, is, not} from 'ramda';
+import {map, join, head, compose, prop, equals, isEmpty, F, isArrayLike, concat, __, pluck, contains, is, not} from 'ramda';
 import {} from 'underscore.string.fp';
 
 // visit :: {k : v} -> String
