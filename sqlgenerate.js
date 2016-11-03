@@ -2,7 +2,7 @@
 
 // Needed to allow its use in older versions of Node and Browsers.
 import 'babel-polyfill';
-import {map, join, head, compose, toUpper, prop, equals, isEmpty, F, isArrayLike, concat, __, pluck, contains, is} from 'ramda';
+import {map, join, head, compose, toUpper, prop, equals, isEmpty, F, isArrayLike, concat, __, pluck, contains, is, not} from 'ramda';
 import {} from 'underscore.string.fp';
 
 function visit(ast) {
@@ -23,7 +23,6 @@ const joinSpace = join(' ');
 const joinTerminal = join(';');
 
 const terminateStatements = map(concat(__, ';'));
-
 const argsList = compose(joinCommaSeperated, visit);
 
 const containsSelect = contains('select');
@@ -31,11 +30,15 @@ const isOfFormat = (n) => compose(equals(n), prop('format'));
 
 const compound = (n) => `${toUpper(n.variant)}${visit(n.statement)}`;
 const name = (n) => `"${n.name}"`;
+const possiblyAlias = (alias = false) => alias ? `as \`${alias}\`` : '';
+
 const identifierWithAlias = (n) => {
-    const alias =  (n.alias)  ? `as \`${n.alias}\`` : '';
+    const alias =  possiblyAlias(n.alias);
     const index = (n.index) ? visit(n.index) : '';
     return `\`${n.name}\` ${alias} ${index}`;
 };
+
+
 
 var Generator = {
     assignment : (n) => {
@@ -252,81 +255,37 @@ var Generator = {
                 return `${operator} ${expression} ${alias}`;
             }
             
-            const isBetween = (n) => (n.operation === 'between');
-            const isExpression = (n) => (n.type === 'expression');
-            
-            const side = (s) => {
+            const side = (n, s) => {
                 const sideOp = visit(n[s]);
-                return !isBetween(n) && (isExpression(n[s]) || containsSelect(sideOp)) ? `(${sideOp})` : sideOp;
+                
+                const isBetween = (n) => (n.operation === 'between');
+                const isExpression = (n) => (n.type === 'expression');
+                
+                const needsBrackets = (not(isBetween(n)) && (isExpression(n[s]) || containsSelect(sideOp)));
+                return needsBrackets ? `(${sideOp})` : sideOp;
             };
-            const left = side('left');
-            const right = side('right');
+            
+            const left = side(n, 'left');
+            const right = side(n, 'right');
             
             return `${left} ${n.operation} ${right}`;
         },
-        list : (n) => {
-            const argsList = compose(joinCommaSeperated, visit);
-            return argsList(n.expression);
-        },
-        order : (n) => {
-            const expression = visit(n.expression);
-            const direction = n.direction;
-            return `${expression} ${toUpper(direction)}`;
-        },
-        limit : (n) => {
-            const limit = visit(n.start);
-            const offset = visit(n.offset);
-            return `LIMIT ${limit}OFFSET ${offset}`;
-        },
-        cast : (n) => {
-            const expression = visit(n.expression);
-            const as = visit(n.as);
-            const alias = (n.alias) ? `as [${n.alias}]` : '';
-            return `CAST(${expression} as ${as})${alias}`;
-        },
-        common : (n) => {
-            const expression = visit(n.expression);
-            const target = visit(n.target);
-            return `${target} as (${expression})`;
-        },
-        'case' : (n) => {
-            const conditions = joinSpace(visit(n.expression));
-            const alias = (n.alias) ? `as [${n.alias}]` : '';
-            return `case ${conditions} end ${alias}`;
-        },
-        recursive : (n) => {
-            const target = visit(n.target);
-            const expression = visit(n.expression);
-            return `${target} as (${expression})`;
-        },
-        exists : (n) => n.operator
+        list : ({expression}) => argsList(expression),
+        order : ({expression, direction}) => `${visit(expression)} ${direction}`,
+        limit : ({start, offset}) => `LIMIT ${visit(start)}OFFSET ${visit(offset)}`,
+        cast : ({expression, as, alias = false}) => `CAST(${visit(expression)} as ${visit(as)})${possiblyAlias(alias)}`,
+        common : ({target, expression}) => `${visit(target)} as (${visit(expression)})`,
+        'case' : ({expression, alias = false}) => `case ${joinSpace(visit(expression))} end ${possiblyAlias(alias)}`,
+        recursive : ({target, expression}) => `${visit(target)} as (${visit(expression)})`,
+        exists : ({operator}) => operator
     },
     condition : {
-        when : (n) => {
-            const when = visit(n.condition);
-            const then = visit(n.consequent);
-            return `when ${when} then ${then}`;
-        },
-        'else' : (n) => {
-            const elseS = visit(n.consequent);
-            return `else ${elseS}`;
-        },
-        'if' : (n) => {
-            const exists = visit(n.condition);
-            return `if ${exists}`;
-        }
+        when : ({condition, consequent}) => `when ${visit(condition)} then ${visit(consequent)}`,
+        'else' : ({consequent}) => `else ${visit(consequent)}`,
+        'if' : ({condition}) =>  `if ${visit(condition)}`
     },
-    'function' : (n) => {
-        const name = toUpper(visit(n.name));
-        const args = visit(n.args);
-        const alias =  (n.alias)  ? `as \`${n.alias}\`` : '';
-        return `${name}(${args}) ${alias}`;
-    },  
-    module : (n) => {
-        const args = visit(n.args);
-        const alias =  (n.alias)  ? `as \`${n.alias}\`` : '';
-        return `${n.name}(${args}) ${alias}`;
-    }, 
+    'function' : ({name, args, alias = false}) => `${visit(name)}(${visit(args)}) ${possiblyAlias(alias)}`,
+    module : ({name, args, alias = false}) => `${name}(${visit(args)}) ${possiblyAlias(alias)}`, 
     event : ({event, occurs, of}) => {
         const processedOf = (of) ? `of ${visit(of)}` : '';
         return `${occurs} ${event} ${processedOf}`;
