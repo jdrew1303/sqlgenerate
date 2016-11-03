@@ -31,6 +31,11 @@ const isOfFormat = (n) => compose(equals(n), prop('format'));
 
 const compound = (n) => `${toUpper(n.variant)}${visit(n.statement)}`;
 const name = (n) => `"${n.name}"`;
+const identifierWithAlias = (n) => {
+    const alias =  (n.alias)  ? `as \`${n.alias}\`` : '';
+    const index = (n.index) ? visit(n.index) : '';
+    return `\`${n.name}\` ${alias} ${index}`;
+};
 
 var Generator = {
     assignment : (n) => {
@@ -57,8 +62,9 @@ var Generator = {
                 str.push(`${results}`);
             }
             if (n.from) {
-                const from = visit(n.from);
-                str.push(`from (${from})`);
+                const processedFrom = visit(n.from);
+                const from = containsSelect(processedFrom) ? `(${processedFrom})` : processedFrom;
+                str.push(`from ${from}`);
             }
             if (n.where) {
                 const where = visit(head(n.where));
@@ -221,17 +227,9 @@ var Generator = {
     },
     identifier : {
         star : (n) => n.name,
-        table : (n) => {
-            const alias =  (n.alias)  ? `as ${n.alias}` : '';
-            const index = (n.index) ? visit(n.index) : '';
-            return `\`${n.name}\` ${alias} ${index}`;
-        },
-        index : (n) => `indexed by ${n.name}`,
-        column : (n) => {
-            const alias =  (n.alias) ? `as \`${n.alias}\`` : '';
-            const index = (n.index) ? visit(n.index) : '';
-            return `\`${n.name}\` ${alias} ${index}`;
-        },
+        table : identifierWithAlias,
+        index : ({name}) => `indexed by ${name}`,
+        column : identifierWithAlias,
         'function' : (n) => n.name,
         expression : (n) => `"${n.name}"(${visit(n.columns)})`,
         view : name,
