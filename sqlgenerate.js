@@ -5,6 +5,7 @@ import 'babel-polyfill';
 import {map, join, head, compose, toUpper, prop, equals, isEmpty, F, isArrayLike, concat, __, pluck, contains, is, not} from 'ramda';
 import {} from 'underscore.string.fp';
 
+// visit :: {k : v} -> String
 function visit(ast) {
     if (is(String, ast)) { return ast; }
     if (isArrayLike(ast)){ return map(visit, ast); }
@@ -14,38 +15,48 @@ function visit(ast) {
     return g(ast);
 }
 
-const datatype = (n) => n.variant;
-const datatypeWithArgs = (n) => `${n.variant}(${visit(n.args)})`;
+// datatype :: {k: v} -> v
+const datatype = ({variant}) => variant;
 
+// datatypeWithArgs :: a -> String
+const datatypeWithArgs = ({variant, args}) => `${variant}(${visit(args)})`;
 
+// joinCommaSeperated :: [a] -> String
 const joinCommaSeperated = join(', ');
+
+// joinSpace :: [a] -> String
 const joinSpace = join(' ');
+
+// joinTerminal :: [a] -> String
 const joinTerminal = join(';');
 
+// terminateStatement :: [a] -> [b]
 const terminateStatements = map(concat(__, ';'));
+
+// argList :: [a] -> String
 const argsList = compose(joinCommaSeperated, visit);
 
+// containsSelect :: String -> Boolean
 const containsSelect = contains('select');
+
+// isOfFormat :: String -> (a) -> Boolean
 const isOfFormat = (n) => compose(equals(n), prop('format'));
 
-const compound = (n) => `${toUpper(n.variant)}${visit(n.statement)}`;
+// compound :: a -> String
+const compound = ({variant, statement}) => `${variant}${visit(statement)}`;
 const name = (n) => `"${n.name}"`;
-const possiblyAlias = (alias = false) => alias ? `as \`${alias}\`` : '';
 
-const identifierWithAlias = (n) => {
-    const alias =  possiblyAlias(n.alias);
-    const index = (n.index) ? visit(n.index) : '';
-    return `\`${n.name}\` ${alias} ${index}`;
-};
+// possiblyAlias :: String -> String
+const possiblyAlias = (alias) => alias ? `as \`${alias}\`` : '';
 
+// possiblyVisit :: String -> String
+const possiblyVisit = (n) => n ? visit(n) : '';
 
+// compound :: a -> String
+const identifierWithAlias = ({name, alias, index}) => `\`${name}\` ${possiblyAlias(alias)} ${possiblyVisit(index)}`;
 
 var Generator = {
-    assignment : (n) => {
-        const target = visit(n.target);
-        const value = visit(n.value);
-        return `${target} = ${value}`;
-    },
+    assignment : ({target, value}) => `${visit(target)} = ${visit(value)}`,
     statement : {
         list : (n) => {
             const statements = compose(joinSpace, terminateStatements, visit);
@@ -273,9 +284,9 @@ var Generator = {
         list : ({expression}) => argsList(expression),
         order : ({expression, direction}) => `${visit(expression)} ${direction}`,
         limit : ({start, offset}) => `LIMIT ${visit(start)}OFFSET ${visit(offset)}`,
-        cast : ({expression, as, alias = false}) => `CAST(${visit(expression)} as ${visit(as)})${possiblyAlias(alias)}`,
+        cast : ({expression, as, alias}) => `CAST(${visit(expression)} as ${visit(as)})${possiblyAlias(alias)}`,
         common : ({target, expression}) => `${visit(target)} as (${visit(expression)})`,
-        'case' : ({expression, alias = false}) => `case ${joinSpace(visit(expression))} end ${possiblyAlias(alias)}`,
+        'case' : ({expression, alias}) => `case ${joinSpace(visit(expression))} end ${possiblyAlias(alias)}`,
         recursive : ({target, expression}) => `${visit(target)} as (${visit(expression)})`,
         exists : ({operator}) => operator
     },
@@ -284,8 +295,8 @@ var Generator = {
         'else' : ({consequent}) => `else ${visit(consequent)}`,
         'if' : ({condition}) =>  `if ${visit(condition)}`
     },
-    'function' : ({name, args, alias = false}) => `${visit(name)}(${visit(args)}) ${possiblyAlias(alias)}`,
-    module : ({name, args, alias = false}) => `${name}(${visit(args)}) ${possiblyAlias(alias)}`, 
+    'function' : ({name, args, alias}) => `${visit(name)}(${visit(args)}) ${possiblyAlias(alias)}`,
+    module : ({name, args, alias}) => `${name}(${visit(args)}) ${possiblyAlias(alias)}`, 
     event : ({event, occurs, of}) => {
         const processedOf = (of) ? `of ${visit(of)}` : '';
         return `${occurs} ${event} ${processedOf}`;
@@ -298,34 +309,17 @@ var Generator = {
             
             // Its a select subquery
             if (containsSelect(source)){
-                const subquery = `(${source}) as ${sourceAlias} ${join}`;
-                return subquery;
+                return `(${source}) as ${sourceAlias} ${join}`;
             }
             // Its an inner join.
             return `${source} ${join}`;
         }
     },
     join : {
-        join : (n) => {
-            const source = visit(n.source);
-            const constraint = visit(n.constraint);
-            return `join ${source}${constraint}`;
-        },
-        'inner join' : (n) => {
-            const source = visit(n.source);
-            const sourceAlias = (n.source.alias)? ` as ${n.source.alias}` : '';
-            const constraint = visit(n.constraint);
-            return `inner join (${source})${sourceAlias} ${constraint}`;
-        },
-        'left outer join' : (n) => {
-            const source = visit(n.source);
-            const constraint = visit(n.constraint);
-            return `left outer join ${source}${constraint}`;
-        },
-        'cross join' : (n) => {
-            const source = visit(n.source);
-            return `, ${source}`;
-        }
+        join : ({source, constraint}) => `join ${visit(source)}${visit(constraint)}`,
+        'inner join' : ({source, constraint}) => `inner join (${visit(source)})${possiblyAlias(source.alias)} ${visit(constraint)}`,
+        'left outer join' : ({source, constraint}) => `left outer join ${visit(source)}${visit(constraint)}`,
+        'cross join' : ({source}) => `, ${visit(source)}`
     },
     constraint : {
         join : (n) => {
@@ -344,14 +338,8 @@ var Generator = {
         'primary key' : () => 'primary key',
         'not null': () => 'not null',
         unique : () => 'unique',
-        check : (n) => {
-            const check = visit(n.expression);
-            return `check (${check})`;
-        },
-        'foreign key' : (n) => {
-            const ref = visit(n.references);
-            return `references ${ref}`;
-        },
+        check : ({expression}) => `check (${visit(expression)})`,
+        'foreign key' : ({references}) => `references ${visit(references)}`,
         'null' : () => 'null'
     },
     definition : {
