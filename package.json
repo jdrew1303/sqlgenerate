@@ -37,7 +37,7 @@
     "babel-polyfill": "^6.16.0",
     "ramda": "^0.22.1"
   },
-  "license": "BSD-2-Clause",
+  "license": "MIT",
   "scripts": {
     "test": "npm run-script lint && npm run-script unit-test",
     "lint": "jshint sqlgenerate.js",
