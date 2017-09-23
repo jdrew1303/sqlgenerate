@@ -1,7 +1,7 @@
 {
   "name": "sqlgenerate",
   "description": "Generates SQL from a JSON AST.",
-  "homepage": "",
+  "homepage": "https://github.com/jdrew1303/sqlgenerate",
   "main": "sqlgenerate.js",
   "version": "1.0.0",
   "engines": {
@@ -35,9 +35,7 @@
   },
   "dependencies": {
     "babel-polyfill": "^6.16.0",
-    "ramda": "^0.22.1",
-    "sqltraverse": "git+https://github.com/jdrew1303/sqltraverse.git",
-    "underscore.string.fp": "^1.0.4"
+    "ramda": "^0.22.1"
   },
   "license": "BSD-2-Clause",
   "scripts": {

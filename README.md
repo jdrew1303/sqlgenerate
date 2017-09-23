@@ -26,7 +26,7 @@
     <img src="https://img.shields.io/travis/jdrew1303/sqlgenerate.svg?style=flat-square" alt=" "> 
   </a>
   <a href="./LICENSE"> 
-    <img src="http://img.shields.io/badge/license-BSD%202%20Clause-blue.svg?style=flat-square" alt=" "> 
+    <img src="http://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt=" "> 
   </a>
   <a href=""> 
     <img src="https://img.shields.io/badge/platform-Browser%20%7C%20Node.js-808080.svg?style=flat-square" alt=" "> 

@@ -1,9 +1,6 @@
-'use strict';
-
 // Needed to allow its use in older versions of Node and Browsers.
 import 'babel-polyfill';
 import {map, join, head, compose, curry, toUpper, prop, equals, isEmpty, F, isArrayLike, concat, __, pluck, contains} from 'ramda';
-import {} from 'underscore.string.fp';
 
 const INDENT = '\t';
 const LINE_END = '\n';
