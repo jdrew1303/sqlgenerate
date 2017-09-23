@@ -333,10 +333,12 @@ var Generator = {
             return `${target} AS (${expression})`;
         },
         'case' : (n) => {
+            const recurser = recurse(Generator);
             const mapConditions = compose(join(LINE_END), mapr(Generator));
+            const discriminant = (n.discriminant) ? recurser(n.discriminant) : '';
             const conditions = mapConditions(n.expression);
             const alias = (n.alias) ? `AS [${n.alias}]` : '';
-            return `CASE ${conditions} END ${alias}`;
+            return `CASE ${discriminant} ${conditions} END ${alias}`;
         },
         recursive : (n) => {
             const recurser = recurse(Generator);
