@@ -40,20 +40,47 @@
 
 SQLGenerate takes the [Codeschool sqlite-parser](https://github.com/codeschool/sqlite-parser/) AST and generates SQL from it. This allows you to read code (using the Codeschool parser), manipulate the AST (using [SQLTraverse](https://github.com/jdrew1303/sqltraverse)) and then generate SQL (using this library :smile:).
 
-<p align="right"><a href="#top">:arrow_up:</a></p>
+<p align="right"><a href="#top">⬆️</a></p>
 
 ## Features
 
 
-<p align="right"><a href="#top">:arrow_up:</a></p>
+<p align="right"><a href="#top">⬆️</a></p>
 
 ## Installation
 
-<p align="right"><a href="#top">:arrow_up:</a></p>
+`npm install sqlgenerator` 👍 done!
+
+<p align="right"><a href="#top">⬆️</a></p>
 
 ### Using this project
 
-<p align="right"><a href="#top">:arrow_up:</a></p>
+The blow example is a simple case of parsing SQL to an ast and then back again to SQL. One of the better use case for this is to modify your SQL somehow. To do this you can use [sqltraverse](https://github.com/jdrew1303/sqltraverse) (yes it's a shameless plug 😁). 
+
+
+```javascript
+import parser       from 'sqlite-parser';
+import { generate } from 'sqlgenerate';
+import { format }   from "sql-formatter";
+
+const example = `
+  SELECT m.title, r.id AS [Theatre Number]
+  FROM Movies AS m
+  INNER JOIN (
+    SELECT r2.movie_id
+    FROM Rooms AS r2
+    WHERE (r2.seats >= 50)
+  ) AS r
+  ON ((m.id = r.movie_id) AND (m.title != 'Batman'));`
+
+const ast = parser(sql);
+const regeneratedSQL = generate(ast);
+
+console.log(format(regeneratedSQL));
+```
+
+
+<p align="right"><a href="#top">⬆️</a></p>
 
 ## Credits
 
@@ -65,6 +92,8 @@ Copyright (c) 2016
 - Tests, tests and more tests.
 - Documentation currently under construction (The examples need to be worked through for SQL instead of JavaScript).
 - AST is currently in a state of flux for some node types. We also probably need a builder for these nodes (another project).
-- You need to pass in `ast.statement` and not just the raw `ast` given back from the parser. (This is an issue with the base node not having a type.)
+- You need to pass in `ast.statement` and not just the raw `ast` given back from the parser (This is an issue with the base node not having a type).
+- Adding support for comments.
+- Adding support for source-maps.
 
-<p align="right"><a href="#top">:arrow_up:</a></p>
+<p align="right"><a href="#top">⬆️</a></p>
