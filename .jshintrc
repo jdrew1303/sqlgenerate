@@ -9,7 +9,7 @@
   "quotmark": "single",
   "undef": true,
   "unused": true,
-  "strict": true,
+  "strict": false,
   "trailing": true,
   "esversion": 6,
   "node": true
