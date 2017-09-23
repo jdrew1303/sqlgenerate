@@ -79,7 +79,7 @@ var Generator = {
                 str.push(`${INDENT}HAVING ${having}${LINE_END}`);
             }
             if (n.order) {
-                const order = recurser(head(n.order));
+                const order = recourseList(n.order);
                 str.push(`${INDENT}ORDER BY ${order}${LINE_END}`);
             }
             if (n.limit) {
@@ -89,9 +89,11 @@ var Generator = {
             return str.join('');
         },
         compound : (n) => {
+            const recourseList = mapr(Generator);
             const statement = recurse(Generator)(n.statement);
-            const compound = mapr(Generator)(n.compound);
-            return `${statement}${compound}`;
+            const compound = recourseList(n.compound).join('');
+            const order = n.order ? `${INDENT}ORDER BY ${recourseList(n.order)}${LINE_END}` : '';
+            return `${statement}${compound} ${order}`;
         },
         create : (n) => {
             const recurser = recurse(Generator);
