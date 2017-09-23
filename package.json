@@ -3,7 +3,7 @@
   "description": "Generates SQL from a JSON AST.",
   "homepage": "https://github.com/jdrew1303/sqlgenerate",
   "main": "sqlgenerate.js",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "engines": {
     "node": ">=0.10.0"
   },
