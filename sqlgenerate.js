@@ -318,8 +318,8 @@ var Generator = {
         limit : (n) => {
             const recurser = recurse(Generator);
             const limit = recurser(n.start);
-            const offset = recurser(n.offset);
-            return `LIMIT ${limit}${LINE_END}${INDENT}OFFSET ${offset}`;
+            const offset = n.offset ? `OFFSET ${recurser(n.offset)}` : '';
+            return `LIMIT ${limit}${LINE_END}${INDENT}${offset}`;
         },
         cast : (n) => {
             const recurser = recurse(Generator);
