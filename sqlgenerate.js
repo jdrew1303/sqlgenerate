@@ -31,6 +31,7 @@ const joinList = join(', ');
 const terminateStatements = map(concat(__, ';'));
 const containsSelect = (s) => (s.indexOf('SELECT') !== -1);
 const isOfFormat = (n) => compose(equals(n), prop('format'));
+const escapeTextLiteral = (s) => s.replace(/'/g, '\'\'');
 
 var Generator = {
     assignment : (n) => {
@@ -276,7 +277,7 @@ var Generator = {
         trigger : (n) => `"${n.name}"`
     },
     literal : {
-        text : (n) => `'${n.value}'`,
+        text : (n) => `'${escapeTextLiteral(n.value)}'`,
         decimal : (n) => `${n.value}`,
         null : () => 'NULL'
     },
